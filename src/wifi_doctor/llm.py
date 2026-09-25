@@ -90,6 +90,16 @@ def _is_retryable(exc: Exception) -> bool:
     return isinstance(exc, RateLimitError) or bool(_RETRYABLE.search(str(exc)))
 
 
+# Gemini names the exhausted quota in its 429, e.g.
+# "GenerateRequestsPerDayPerProjectPerModel-FreeTier". A daily quota does not
+# come back within any backoff worth waiting for, so it is not retried.
+_DAILY_QUOTA = re.compile(r"PerDay", re.IGNORECASE)
+
+
+def _is_daily_quota(exc: Exception) -> bool:
+    return bool(_DAILY_QUOTA.search(str(exc)))
+
+
 def _retry_after_seconds(exc: Exception) -> float | None:
     """Honour the provider's own backoff hint when it gives one."""
     m = re.search(r"retryDelay['\"]?\s*[:=]\s*['\"]?(\d+(?:\.\d+)?)s", str(exc))
@@ -141,7 +151,7 @@ class LLMProvider(ABC):
                 )
             except Exception as exc:  # noqa: BLE001
                 last = exc
-                if not _is_retryable(exc) or attempt == MAX_RETRIES - 1:
+                if not _is_retryable(exc) or _is_daily_quota(exc) or attempt == MAX_RETRIES - 1:
                     raise
                 hint = _retry_after_seconds(exc)
                 delay = hint if hint is not None else min(BACKOFF_CAP, BACKOFF_BASE**attempt)

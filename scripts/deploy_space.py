@@ -78,9 +78,10 @@ def ensure_space(api: HfApi, repo_id: str, hardware: str) -> None:
             status = exc.response.status_code if exc.response is not None else None
             if status in (402, 403):
                 sys.exit(
-                    f"The Hub refused to create the Space (HTTP {status}). This account may not "
-                    f"be allowed to create a '{hardware}' Space, or the token lacks write "
-                    f"access to this namespace. Nothing was created."
+                    f"The Hub refused to create the Space (HTTP {status}: "
+                    f"{exc.server_message or 'no message'}). This account may not be allowed "
+                    f"to create a '{hardware}' Space, or the token lacks write access to this "
+                    f"namespace. Nothing was created."
                 )
             raise
         return
@@ -140,12 +141,12 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--space", default=os.environ.get("HF_SPACE") or "iamgarvit/wifi-doctor")
     p.add_argument("--hardware", default="zero-a10g")
-    p.add_argument("--model", default="gemini-3.5-flash-lite", help="LLM_MODEL for the demo")
+    # Not the evaluation model: Gemini's free quota is per model, so the demo
+    # runs on its own and can never spend the budget an evaluation run needs.
+    p.add_argument("--model", default="gemini-3.1-flash-lite", help="LLM_MODEL for the demo")
     p.add_argument("--max-runs-per-session", type=int, default=5)
-    # ~6.4 API requests per agent diagnosis, so 30 diagnoses stay under LLM_RPD,
-    # and LLM_RPD leaves most of the 500/day free quota for the evaluation.
-    p.add_argument("--daily-cap", type=int, default=30)
-    p.add_argument("--rpd", type=int, default=200)
+    # An agent diagnosis is ~6 API requests, so 50 a day is ~300 of the 500/day.
+    p.add_argument("--daily-cap", type=int, default=50)
     p.add_argument("--timeout", type=int, default=900, help="seconds to wait for RUNNING")
     p.add_argument("--no-wait", action="store_true")
     args = p.parse_args()
@@ -163,7 +164,6 @@ def main() -> int:
         {
             "LLM_PROVIDER": "gemini",
             "LLM_MODEL": args.model,
-            "LLM_RPD": str(args.rpd),
             "DEMO_MAX_RUNS_PER_SESSION": str(args.max_runs_per_session),
             "DEMO_DAILY_CAP": str(args.daily_cap),
             "WIFI_DOCTOR_EMBEDDINGS": "0",
