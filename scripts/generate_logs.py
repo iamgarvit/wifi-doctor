@@ -22,7 +22,7 @@ import json
 import random
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # --------------------------------------------------------------------------
@@ -59,6 +59,10 @@ EAP_IDENTITIES = [
 ]
 
 VARIANTS = ["plain", "heavy_noise", "misleading", "truncated", "transient_recovery"]
+# The committed corpus was generated at UTC+05:30. Pin that offset so the
+# NetworkManager epoch stamps don't depend on the machine's local timezone.
+GEN_TZ = timezone(timedelta(hours=5, minutes=30))
+
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 
@@ -122,7 +126,7 @@ class Emitter:
         return self.emit("kernel", f"{self.iface}: {text}", ev=ev, gap=gap)
 
     def nm(self, text: str, *, level: str = "info", ev: bool = False) -> int:
-        ts = self.t.timestamp()
+        ts = self.t.replace(tzinfo=GEN_TZ).timestamp()
         pad = "  " if level == "info" else "  "
         return self.emit(
             f"NetworkManager[{self.nm_pid}]", f"<{level}>{pad}[{ts:.4f}] {text}", ev=ev
