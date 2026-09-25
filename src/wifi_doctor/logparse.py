@@ -50,8 +50,9 @@ def ctrl_events(lines: list[str]) -> list[tuple[int, str, str]]:
     return out
 
 
-def find(lines: list[str], pattern: str, *, max_hits: int = 20,
-         ignore_case: bool = True) -> list[tuple[int, str]]:
+def find(
+    lines: list[str], pattern: str, *, max_hits: int = 20, ignore_case: bool = True
+) -> list[tuple[int, str]]:
     """Regex search returning up to ``max_hits`` (line_no, text) pairs.
 
     Invalid regexes are not an error the model should have to reason about, so
@@ -63,8 +64,10 @@ def find(lines: list[str], pattern: str, *, max_hits: int = 20,
         match = rx.search
     except re.error:
         needle = pattern.lower() if ignore_case else pattern
+
         def match(s: str):  # type: ignore[misc]
             return (needle in (s.lower() if ignore_case else s)) or None
+
     hits: list[tuple[int, str]] = []
     for i, line in enumerate(lines, start=1):
         if match(line):
@@ -84,8 +87,9 @@ def min_signal(lines: list[str]) -> int | None:
     return min(vals) if vals else None
 
 
-def truncate_for_prompt(lines: list[str], max_lines: int = 2000,
-                        keep_window: int = 6) -> tuple[list[int], list[str]]:
+def truncate_for_prompt(
+    lines: list[str], max_lines: int = 2000, keep_window: int = 6
+) -> tuple[list[int], list[str]]:
     """Reduce a long log to at most ``max_lines`` lines, keeping what matters.
 
     Returns ``(kept_line_numbers, kept_lines)``. Line numbers are preserved so
@@ -102,8 +106,9 @@ def truncate_for_prompt(lines: list[str], max_lines: int = 2000,
     for a in anchors:
         keep.update(range(max(1, a - keep_window), min(n, a + keep_window) + 1))
     if len(keep) < max_lines:
-        err = re.compile(r"fail|timeout|reject|deauth|disassoc|error|warn|no lease|No DHCPOFFERS",
-                         re.IGNORECASE)
+        err = re.compile(
+            r"fail|timeout|reject|deauth|disassoc|error|warn|no lease|No DHCPOFFERS", re.IGNORECASE
+        )
         for i, line in enumerate(lines, start=1):
             if err.search(line):
                 keep.add(i)

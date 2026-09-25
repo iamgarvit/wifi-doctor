@@ -30,25 +30,42 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 
 SSIDS = [
-    "HomeNet-5G", "Cafe_Guest", "eduroam", "CorpWiFi", "Starbucks", "TP-Link_4A2C",
-    "Airport_Free_WiFi", "NETGEAR72", "Pixel_1234", "MyFiberNet", "Hotel-Guest",
-    "Lab-Wireless", "ATT8xQz2", "Xfinity", "OfficeNet-Guest",
+    "HomeNet-5G",
+    "Cafe_Guest",
+    "eduroam",
+    "CorpWiFi",
+    "Starbucks",
+    "TP-Link_4A2C",
+    "Airport_Free_WiFi",
+    "NETGEAR72",
+    "Pixel_1234",
+    "MyFiberNet",
+    "Hotel-Guest",
+    "Lab-Wireless",
+    "ATT8xQz2",
+    "Xfinity",
+    "OfficeNet-Guest",
 ]
 HOSTS = ["laptop-01", "thinkpad-t14", "dev-box", "mbp-linux", "nuc-lab", "x1carbon"]
 OUIS = ["00:1a:2b", "ac:9e:17", "3c:37:86", "f8:32:e4", "74:83:c2", "b0:be:76", "e0:cc:f8"]
 FREQS_24 = [2412, 2417, 2422, 2437, 2442, 2452, 2462]
 FREQS_5 = [5180, 5200, 5220, 5240, 5745, 5765, 5785, 5805]
 EAP_IDENTITIES = [
-    "jdoe@univ.edu", "alice.smith@corp.example", "s1234567@student.ac.uk",
-    "bob@eng.example.com", "m.garcia@company.net",
+    "jdoe@univ.edu",
+    "alice.smith@corp.example",
+    "s1234567@student.ac.uk",
+    "bob@eng.example.com",
+    "m.garcia@company.net",
 ]
 
 VARIANTS = ["plain", "heavy_noise", "misleading", "truncated", "transient_recovery"]
 
 
 def _mac(rng: random.Random) -> str:
-    return "%s:%02x:%02x:%02x" % (rng.choice(OUIS), rng.randint(0, 255),
-                                  rng.randint(0, 255), rng.randint(0, 255))
+    return (
+        f"{rng.choice(OUIS)}:{rng.randint(0, 255):02x}"
+        f":{rng.randint(0, 255):02x}:{rng.randint(0, 255):02x}"
+    )
 
 
 def _ipv4(rng: random.Random) -> tuple[str, str]:
@@ -118,19 +135,39 @@ class Emitter:
 UNRELATED_NOISE: list[Callable[[Emitter], None]] = [
     lambda e: e.emit("systemd", "Started Daily apt download activities."),
     lambda e: e.emit("systemd", "Starting Cleanup of Temporary Directories..."),
-    lambda e: e.emit("systemd-logind", f"New session {e.rng.randint(2, 40)} of user garvit."),
+    lambda e: e.emit(
+        "systemd-logind",
+        f"New session {e.rng.randint(2, 40)} of user {e.rng.choice(['devuser', 'operator', 'labtech'])}.",
+    ),
     lambda e: e.emit("CRON", "(root) CMD (  cd / && run-parts --report /etc/cron.hourly)"),
     lambda e: e.emit("chronyd", f"Selected source 162.159.200.{e.rng.randint(1, 250)}"),
-    lambda e: e.emit("avahi-daemon", f"Registering new address record for fe80::{e.rng.randint(16, 4095):x} on wlan0.*."),
+    lambda e: e.emit(
+        "avahi-daemon",
+        f"Registering new address record for fe80::{e.rng.randint(16, 4095):x} on wlan0.*.",
+    ),
     lambda e: e.emit("avahi-daemon", "Withdrawing address record for 169.254.8.2 on wlan0."),
-    lambda e: e.emit("bluetoothd", "Endpoint registered: sender=:1.72 path=/MediaEndpoint/A2DPSink"),
-    lambda e: e.emit("kernel", f"usb {e.rng.randint(1, 3)}-2: new high-speed USB device number {e.rng.randint(3, 20)} using xhci_hcd"),
-    lambda e: e.emit("kernel", f"Bluetooth: hci0: unexpected event for opcode 0x{e.rng.randint(0, 65535):04x}"),
-    lambda e: e.emit("gnome-shell", "Window manager warning: Buggy client sent a _NET_ACTIVE_WINDOW message"),
-    lambda e: e.emit("dbus-daemon", "[system] Successfully activated service 'org.freedesktop.nm_dispatcher'"),
+    lambda e: e.emit(
+        "bluetoothd", "Endpoint registered: sender=:1.72 path=/MediaEndpoint/A2DPSink"
+    ),
+    lambda e: e.emit(
+        "kernel",
+        f"usb {e.rng.randint(1, 3)}-2: new high-speed USB device number {e.rng.randint(3, 20)} using xhci_hcd",
+    ),
+    lambda e: e.emit(
+        "kernel", f"Bluetooth: hci0: unexpected event for opcode 0x{e.rng.randint(0, 65535):04x}"
+    ),
+    lambda e: e.emit(
+        "gnome-shell", "Window manager warning: Buggy client sent a _NET_ACTIVE_WINDOW message"
+    ),
+    lambda e: e.emit(
+        "dbus-daemon", "[system] Successfully activated service 'org.freedesktop.nm_dispatcher'"
+    ),
     lambda e: e.emit("kernel", f"thermal thermal_zone0: temperature {e.rng.randint(45, 82)}C"),
     lambda e: e.emit("snapd", "Ensure state already scheduled, skipping."),
-    lambda e: e.emit("rtkit-daemon", "Successfully made thread 4412 of process 4402 owned by '1000' RT at priority 5."),
+    lambda e: e.emit(
+        "rtkit-daemon",
+        "Successfully made thread 4412 of process 4402 owned by '1000' RT at priority 5.",
+    ),
 ]
 
 
@@ -154,12 +191,18 @@ def wifi_noise(e: Emitter, bssid: str, ssid: str, freq: int, *, signal: int | No
     elif choice == 5:
         e.kern(f"Limiting TX power to {e.rng.choice([20, 23, 30])} dBm as advertised by {bssid}")
     elif choice == 6:
-        e.wpa(f"CTRL-EVENT-REGDOM-CHANGE init={e.rng.choice(['CORE', 'USER', 'COUNTRY_IE'])} type={e.rng.choice(['WORLD', 'COUNTRY'])}")
+        e.wpa(
+            f"CTRL-EVENT-REGDOM-CHANGE init={e.rng.choice(['CORE', 'USER', 'COUNTRY_IE'])} type={e.rng.choice(['WORLD', 'COUNTRY'])}"
+        )
     else:
-        e.nm(f"device ({e.iface}): supplicant interface state: {e.rng.choice(['scanning', 'inactive', 'completed'])} -> {e.rng.choice(['scanning', 'inactive', 'authenticating'])}")
+        e.nm(
+            f"device ({e.iface}): supplicant interface state: {e.rng.choice(['scanning', 'inactive', 'completed'])} -> {e.rng.choice(['scanning', 'inactive', 'authenticating'])}"
+        )
 
 
-def sprinkle(e: Emitter, n: int, bssid: str, ssid: str, freq: int, *, signal: int | None = None) -> None:
+def sprinkle(
+    e: Emitter, n: int, bssid: str, ssid: str, freq: int, *, signal: int | None = None
+) -> None:
     for _ in range(n):
         if e.rng.random() < 0.55:
             e.rng.choice(UNRELATED_NOISE)(e)
@@ -185,8 +228,14 @@ class Ctx:
 
     def noise(self, lo: int = 0, hi: int | None = None) -> None:
         hi = self.density if hi is None else hi
-        sprinkle(self.e, self.rng.randint(lo, max(lo, hi)), self.bssid, self.ssid, self.freq,
-                 signal=self.signal)
+        sprinkle(
+            self.e,
+            self.rng.randint(lo, max(lo, hi)),
+            self.bssid,
+            self.ssid,
+            self.freq,
+            signal=self.signal,
+        )
 
 
 def scan_phase(c: Ctx, *, found: bool = True) -> None:
@@ -232,12 +281,16 @@ def dhcp_ok(c: Ctx) -> tuple[str, str]:
     e = c.e
     ip, gw = _ipv4(c.rng)
     e.nm(f"dhcp4 ({e.iface}): activation: beginning transaction (timeout in 45 seconds)")
-    e.dhcp(f"DHCPDISCOVER on {e.iface} to 255.255.255.255 port 67 interval {c.rng.choice([3, 5, 7])}")
+    e.dhcp(
+        f"DHCPDISCOVER on {e.iface} to 255.255.255.255 port 67 interval {c.rng.choice([3, 5, 7])}"
+    )
     e.dhcp(f"DHCPOFFER of {ip} from {gw}")
     e.dhcp(f"DHCPREQUEST for {ip} on {e.iface} to 255.255.255.255 port 67")
     e.dhcp(f"DHCPACK of {ip} from {gw}")
     e.dhcp(f"bound to {ip} -- renewal in {c.rng.randint(1200, 3400)} seconds.")
-    e.nm(f"device ({e.iface}): state change: ip-config -> ip-check (reason 'none', sys-iface-state: 'managed')")
+    e.nm(
+        f"device ({e.iface}): state change: ip-config -> ip-check (reason 'none', sys-iface-state: 'managed')"
+    )
     return ip, gw
 
 
@@ -290,7 +343,10 @@ def sc_wrong_password(c: Ctx) -> None:
         c.noise()
         if i < attempts:
             e.wpa(f'CTRL-EVENT-SSID-REENABLED id={c.net_id} ssid="{c.ssid}"')
-    e.nm(f"device ({e.iface}): Activation: (wifi) association took too long, failing activation", level="warn")
+    e.nm(
+        f"device ({e.iface}): Activation: (wifi) association took too long, failing activation",
+        level="warn",
+    )
 
 
 def sc_handshake_timeout(c: Ctx) -> None:
@@ -308,7 +364,10 @@ def sc_handshake_timeout(c: Ctx) -> None:
     auth_ok(c)
     assoc_ok(c)
     e.state("ASSOCIATED", "4WAY_HANDSHAKE")
-    e.wpa(f"CTRL-EVENT-SIGNAL-CHANGE above=0 signal={c.signal} noise={c.rng.randint(-94, -89)} txrate=6000", ev=True)
+    e.wpa(
+        f"CTRL-EVENT-SIGNAL-CHANGE above=0 signal={c.signal} noise={c.rng.randint(-94, -89)} txrate=6000",
+        ev=True,
+    )
     for _ in range(c.rng.randint(2, 4)):
         e.wpa("WPA: EAPOL-Key timeout", ev=True)
         c.noise(0, 2)
@@ -330,7 +389,9 @@ def sc_auth_timeout(c: Ctx) -> None:
         c.noise(0, 2)
     e.kern(f"authentication with {c.bssid} timed out", ev=True)
     e.wpa(f"Authentication with {c.bssid} timed out.", ev=True)
-    e.wpa(f"CTRL-EVENT-SSID-TEMP-DISABLED id={c.net_id} ssid=\"{c.ssid}\" auth_failures=1 duration=10 reason=CONN_FAILED")
+    e.wpa(
+        f'CTRL-EVENT-SSID-TEMP-DISABLED id={c.net_id} ssid="{c.ssid}" auth_failures=1 duration=10 reason=CONN_FAILED'
+    )
     e.state("AUTHENTICATING", "DISCONNECTED")
 
 
@@ -352,8 +413,14 @@ def sc_ap_deauth(c: Ctx) -> None:
     """A healthy session is torn down by the AP with an explicit reason code."""
     e = c.e
     reason = c.rng.choice([1, 2, 3, 4, 5, 8])
-    names = {1: "UNSPECIFIED", 2: "PREV_AUTH_NO_LONGER_VALID", 3: "DEAUTH_LEAVING",
-             4: "DISASSOC_DUE_TO_INACTIVITY", 5: "DISASSOC_AP_BUSY", 8: "DISASSOC_STA_HAS_LEFT"}
+    names = {
+        1: "UNSPECIFIED",
+        2: "PREV_AUTH_NO_LONGER_VALID",
+        3: "DEAUTH_LEAVING",
+        4: "DISASSOC_DUE_TO_INACTIVITY",
+        5: "DISASSOC_AP_BUSY",
+        8: "DISASSOC_STA_HAS_LEFT",
+    }
     scan_phase(c)
     auth_ok(c)
     assoc_ok(c)
@@ -362,8 +429,12 @@ def sc_ap_deauth(c: Ctx) -> None:
     c.noise(3, c.density + 4)
     if c.rng.random() < 0.35:
         # A dip in signal that recovers -- looks like a coverage problem but is not.
-        e.wpa(f"CTRL-EVENT-SIGNAL-CHANGE above=0 signal={c.rng.randint(-79, -72)} noise=-91 txrate=12000")
-        e.wpa(f"CTRL-EVENT-SIGNAL-CHANGE above=1 signal={c.rng.randint(-62, -50)} noise=-91 txrate=58500")
+        e.wpa(
+            f"CTRL-EVENT-SIGNAL-CHANGE above=0 signal={c.rng.randint(-79, -72)} noise=-91 txrate=12000"
+        )
+        e.wpa(
+            f"CTRL-EVENT-SIGNAL-CHANGE above=1 signal={c.rng.randint(-62, -50)} noise=-91 txrate=58500"
+        )
     if c.rng.random() < 0.3:
         # Only the supplicant control event survives at this log level.
         disconnect(c, reason, local=False)
@@ -388,12 +459,17 @@ def sc_eap_failure(c: Ctx) -> None:
     e.wpa(f"EAP: Identity response: {ident}")
     if method == 13:
         e.wpa("CTRL-EVENT-EAP-STATUS status='remote certificate verification' parameter=''")
-        e.wpa(f"CTRL-EVENT-EAP-PEER-CERT depth=0 subject='/CN=radius.{c.ssid.lower()}.example' hash=sha256")
+        e.wpa(
+            f"CTRL-EVENT-EAP-PEER-CERT depth=0 subject='/CN=radius.{c.ssid.lower()}.example' hash=sha256"
+        )
     c.noise(0, 2)
     e.wpa("CTRL-EVENT-EAP-FAILURE EAP authentication failed", ev=True)
     e.kern(f"deauthenticated from {c.bssid} (Reason: 23=IEEE8021X_FAILED)", ev=True)
     disconnect(c, 23, local=False, ev=False)
-    e.wpa(f'CTRL-EVENT-SSID-TEMP-DISABLED id={c.net_id} ssid="{c.ssid}" auth_failures=1 duration=10 reason=AUTH_FAILED', ev=True)
+    e.wpa(
+        f'CTRL-EVENT-SSID-TEMP-DISABLED id={c.net_id} ssid="{c.ssid}" auth_failures=1 duration=10 reason=AUTH_FAILED',
+        ev=True,
+    )
 
 
 def sc_dhcp_timeout(c: Ctx) -> None:
@@ -403,14 +479,19 @@ def sc_dhcp_timeout(c: Ctx) -> None:
     auth_ok(c)
     assoc_ok(c)
     handshake_ok(c)
-    e.nm(f"device ({e.iface}): state change: config -> ip-config (reason 'none', sys-iface-state: 'managed')")
+    e.nm(
+        f"device ({e.iface}): state change: config -> ip-config (reason 'none', sys-iface-state: 'managed')"
+    )
     e.nm(f"dhcp4 ({e.iface}): activation: beginning transaction (timeout in 45 seconds)")
     for iv in (3, 7, 13, 21):
         e.dhcp(f"DHCPDISCOVER on {e.iface} to 255.255.255.255 port 67 interval {iv}", ev=True)
         c.noise(0, 2)
     e.dhcp("No DHCPOFFERS received.", ev=True)
     e.nm(f"dhcp4 ({e.iface}): state changed no lease", level="warn", ev=True)
-    e.nm(f"device ({e.iface}): state change: ip-config -> failed (reason 'ip-config-unavailable', sys-iface-state: 'managed')", level="warn")
+    e.nm(
+        f"device ({e.iface}): state change: ip-config -> failed (reason 'ip-config-unavailable', sys-iface-state: 'managed')",
+        level="warn",
+    )
 
 
 def sc_beacon_loss(c: Ctx) -> None:
@@ -424,7 +505,10 @@ def sc_beacon_loss(c: Ctx) -> None:
     c.noise(2, c.density + 3)
     for sig in range(-68, -92, -c.rng.choice([5, 6, 7])):
         c.signal = sig
-        e.wpa(f"CTRL-EVENT-SIGNAL-CHANGE above=0 signal={sig} noise={c.rng.randint(-95, -90)} txrate={c.rng.choice([6000, 12000])}", ev=(sig <= -80))
+        e.wpa(
+            f"CTRL-EVENT-SIGNAL-CHANGE above=0 signal={sig} noise={c.rng.randint(-95, -90)} txrate={c.rng.choice([6000, 12000])}",
+            ev=(sig <= -80),
+        )
         c.noise(0, 2)
     e.wpa("CTRL-EVENT-BEACON-LOSS ", ev=True)
     e.kern(f"Connection to AP {c.bssid} lost", ev=True)
@@ -444,7 +528,9 @@ def sc_roaming_failure(c: Ctx) -> None:
     handshake_ok(c)
     dhcp_ok(c)
     c.noise(2, c.density + 2)
-    e.wpa(f"CTRL-EVENT-SIGNAL-CHANGE above=0 signal={c.rng.randint(-78, -72)} noise=-92 txrate=12000")
+    e.wpa(
+        f"CTRL-EVENT-SIGNAL-CHANGE above=0 signal={c.rng.randint(-78, -72)} noise=-92 txrate=12000"
+    )
     e.wpa("CTRL-EVENT-SCAN-STARTED ")
     e.wpa("CTRL-EVENT-SCAN-RESULTS ")
     e.wpa(f"CTRL-EVENT-BSS-ADDED {c.rng.randint(1, 30)} {new_bssid}")
@@ -454,9 +540,14 @@ def sc_roaming_failure(c: Ctx) -> None:
         f"level={old_level} selected bssid={new_bssid} freq={new_freq} level={new_level}",
         ev=True,
     )
-    e.wpa(f"SME: Trying to authenticate with {new_bssid} (SSID='{c.ssid}' freq={new_freq} MHz)", ev=True)
+    e.wpa(
+        f"SME: Trying to authenticate with {new_bssid} (SSID='{c.ssid}' freq={new_freq} MHz)",
+        ev=True,
+    )
     e.kern(f"authenticate with {new_bssid}")
-    e.wpa(f"CTRL-EVENT-ASSOC-REJECT bssid={new_bssid} status_code={c.rng.choice([17, 30])}", ev=True)
+    e.wpa(
+        f"CTRL-EVENT-ASSOC-REJECT bssid={new_bssid} status_code={c.rng.choice([17, 30])}", ev=True
+    )
     e.wpa(f"CTRL-EVENT-DISCONNECTED bssid={old_bssid} reason=3 locally_generated=1", ev=True)
     e.state("ASSOCIATING", "DISCONNECTED")
     c.bssid = new_bssid
@@ -518,7 +609,9 @@ def apply_misleading(c: Ctx, label: str) -> None:
     e = c.e
     decoys = [
         lambda: e.wpa(f"CTRL-EVENT-DISCONNECTED bssid={_mac(c.rng)} reason=3 locally_generated=1"),
-        lambda: e.kern(f"deauthenticating from {_mac(c.rng)} by local choice (Reason: 3=DEAUTH_LEAVING)"),
+        lambda: e.kern(
+            f"deauthenticating from {_mac(c.rng)} by local choice (Reason: 3=DEAUTH_LEAVING)"
+        ),
         lambda: e.wpa("CTRL-EVENT-SCAN-FAILED ret=-16 retry=1"),
         lambda: e.wpa("CTRL-EVENT-BEACON-LOSS "),
         lambda: e.dhcp(f"DHCPDISCOVER on {e.iface} to 255.255.255.255 port 67 interval 5"),
@@ -569,14 +662,33 @@ def build_case(case_id: str, split: str, label: str, variant: str, seed: int) ->
     host = rng.choice(HOSTS)
     ssid = rng.choice(SSIDS)
     freq = rng.choice(FREQS_24 + FREQS_5)
-    start = datetime(2025, rng.randint(1, 12), rng.randint(1, 28),
-                     rng.randint(0, 23), rng.randint(0, 59), rng.randint(0, 59))
-    e = Emitter(rng=rng, host=host, t=start,
-                wpa_pid=rng.randint(700, 9000), nm_pid=rng.randint(700, 9000),
-                dh_pid=rng.randint(700, 9000))
+    start = datetime(
+        2025,
+        rng.randint(1, 12),
+        rng.randint(1, 28),
+        rng.randint(0, 23),
+        rng.randint(0, 59),
+        rng.randint(0, 59),
+    )
+    e = Emitter(
+        rng=rng,
+        host=host,
+        t=start,
+        wpa_pid=rng.randint(700, 9000),
+        nm_pid=rng.randint(700, 9000),
+        dh_pid=rng.randint(700, 9000),
+    )
     density = {"heavy_noise": rng.randint(9, 18)}.get(variant, rng.randint(1, 5))
-    c = Ctx(e=e, rng=rng, ssid=ssid, bssid=_mac(rng), freq=freq,
-            net_id=rng.randint(0, 3), density=density, signal=rng.randint(-62, -38))
+    c = Ctx(
+        e=e,
+        rng=rng,
+        ssid=ssid,
+        bssid=_mac(rng),
+        freq=freq,
+        net_id=rng.randint(0, 3),
+        density=density,
+        signal=rng.randint(-62, -38),
+    )
 
     # Preamble: daemon start-up, always present, never evidence.
     e.emit(f"wpa_supplicant[{e.wpa_pid}]", "Successfully initialized wpa_supplicant")
@@ -628,8 +740,7 @@ def generate_split(split: str, n: int, base_seed: int) -> list[dict]:
         # First pass over the label set is always plain, so every class has an
         # easy example; after that, variants are sampled.
         variant = (
-            "plain" if i < len(labels)
-            else picker.choices(VARIANTS, weights=[1, 2, 3, 2, 3])[0]
+            "plain" if i < len(labels) else picker.choices(VARIANTS, weights=[1, 2, 3, 2, 3])[0]
         )
         seed = base_seed + i * 977
         cases.append(build_case(f"{split}_{i:04d}", split, label, variant, seed))
@@ -645,7 +756,10 @@ def main() -> None:
     ap.add_argument("--test-seed", type=int, default=77001313)
     args = ap.parse_args()
 
-    for split, n, seed in (("dev", args.dev_n, args.dev_seed), ("test", args.test_n, args.test_seed)):
+    for split, n, seed in (
+        ("dev", args.dev_n, args.dev_seed),
+        ("test", args.test_n, args.test_seed),
+    ):
         cases = generate_split(split, n, seed)
         d = args.out / split
         d.mkdir(parents=True, exist_ok=True)
@@ -654,8 +768,10 @@ def main() -> None:
             for case in cases:
                 fh.write(json.dumps(case) + "\n")
         lens = [c["n_lines"] for c in cases]
-        print(f"{split}: {len(cases)} cases -> {path}  "
-              f"(lines {min(lens)}-{max(lens)}, mean {sum(lens) / len(lens):.0f})")
+        print(
+            f"{split}: {len(cases)} cases -> {path}  "
+            f"(lines {min(lens)}-{max(lens)}, mean {sum(lens) / len(lens):.0f})"
+        )
 
 
 if __name__ == "__main__":

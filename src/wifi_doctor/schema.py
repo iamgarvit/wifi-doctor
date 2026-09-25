@@ -11,12 +11,12 @@ description is used three ways:
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class RootCause(str, Enum):
+class RootCause(StrEnum):
     """The closed label set the diagnoser must choose from.
 
     Kept deliberately small and mutually exclusive: every synthetic log in
