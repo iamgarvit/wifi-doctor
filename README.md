@@ -254,6 +254,7 @@ with exponential backoff, honouring the provider's own `retryDelay` hint when it
 
 ```bash
 pytest -q          # 125 tests, fully offline (MockProvider, BM25-only retrieval)
+                   # 11 of them need gradio and skip without it, as CI does
 ruff check . && ruff format --check .
 ```
 

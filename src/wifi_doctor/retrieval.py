@@ -131,7 +131,9 @@ class KnowledgeBase:
     # -- dense half --------------------------------------------------------
     @property
     def backend(self) -> str:
-        return "hybrid" if self._matrix is not None else "bm25"
+        # Both halves are required: a cached matrix is useless without the
+        # encoder that turns a query into a comparable vector.
+        return "hybrid" if self._matrix is not None and self._model is not None else "bm25"
 
     def _fingerprint(self, model_name: str) -> str:
         h = hashlib.sha256(model_name.encode())
@@ -152,9 +154,12 @@ class KnowledgeBase:
                 npy = self.cache_dir / f"{fp}.npy"
                 meta = self.cache_dir / f"{fp}.json"
                 if npy.exists() and meta.exists():
+                    # Load the encoder first: if it fails we must fall through
+                    # to the next model with no half-built index left behind.
+                    model = SentenceTransformer(name, device="cpu")
                     self._matrix = np.load(npy)
+                    self._model = model
                     self.model_name = json.loads(meta.read_text())["model"]
-                    self._model = SentenceTransformer(name, device="cpu")
                     log.info("loaded cached dense index %s", npy.name)
                     return
                 model = SentenceTransformer(name, device="cpu")
@@ -174,6 +179,7 @@ class KnowledgeBase:
                 return
             except Exception as exc:  # pragma: no cover - network/model failures
                 log.info("embedding model %s unavailable (%s)", name, exc)
+                self._matrix, self._model, self.model_name = None, None, None
         log.info("no embedding model loaded; falling back to BM25-only")
 
     # -- search ------------------------------------------------------------

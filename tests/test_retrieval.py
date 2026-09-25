@@ -78,3 +78,16 @@ def test_kb_contains_no_test_log(dev_cases):
     for case in dev_cases[:10]:
         for line in case["log"].split("\n")[:40]:
             assert line not in blob
+
+
+def test_backend_reports_bm25_when_the_encoder_is_missing(monkeypatch, tmp_path):
+    """A cached matrix without a query encoder must not be called 'hybrid'."""
+    import numpy as np
+
+    from wifi_doctor.retrieval import KnowledgeBase as KB
+
+    kb = KB(cache_dir=tmp_path, use_embeddings=False)
+    kb._matrix = np.zeros((len(kb.chunks), 4), dtype=np.float32)
+    assert kb._model is None
+    assert kb.backend == "bm25"
+    assert kb.search("handshake", k=2)  # and it still answers, lexically

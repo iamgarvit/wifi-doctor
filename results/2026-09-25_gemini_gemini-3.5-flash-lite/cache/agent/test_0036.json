@@ -1,0 +1,31 @@
+{
+  "case_id": "test_0036",
+  "mode": "agent",
+  "truth": "ASSOC_REJECTED",
+  "predicted": "ROAMING_FAILURE",
+  "truth_lines": [
+    30,
+    31,
+    38
+  ],
+  "cited_lines": [
+    12,
+    14,
+    31
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 3,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 7,
+  "api_requests": 7,
+  "total_tokens": 75118,
+  "wall_ms": 20383.4,
+  "llm_latency_ms": 9560.8,
+  "variant": "transient_recovery",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/agent/test_0036.jsonl",
+  "error": null
+}
