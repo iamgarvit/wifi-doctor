@@ -253,7 +253,7 @@ with exponential backoff, honouring the provider's own `retryDelay` hint when it
 **Tests:**
 
 ```bash
-pytest -q          # 99 tests, fully offline (MockProvider, BM25-only retrieval)
+pytest -q          # 125 tests, fully offline (MockProvider, BM25-only retrieval)
 ruff check . && ruff format --check .
 ```
 
@@ -297,7 +297,7 @@ kb/              28 markdown docs: 802.11 code tables, state machine, per-class 
 data/synthetic/  dev (44) and test (66) cases with ground-truth evidence line numbers
 scripts/         log generator; README results injector
 eval/            metrics + the evaluation CLI
-tests/           99 offline tests
+tests/           125 offline tests
 docs/            sample traces
 app.py           the Gradio demo
 ```
