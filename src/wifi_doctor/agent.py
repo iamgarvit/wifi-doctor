@@ -195,13 +195,10 @@ def diagnose(
         name=trace_name,
     )
 
-    try:
-        if mode == "single_shot":
-            diagnosis, attempts, errors, steps = _run_single_shot(provider, lines, ctx, trace)
-        else:
-            diagnosis, attempts, errors, steps = _run_agent(provider, lines, ctx, trace, max_steps)
-    finally:
-        pass
+    if mode == "single_shot":
+        diagnosis, attempts, errors, steps = _run_single_shot(provider, lines, ctx, trace)
+    else:
+        diagnosis, attempts, errors, steps = _run_agent(provider, lines, ctx, trace, max_steps)
 
     totals = trace.totals
     trace.finish(
@@ -256,11 +253,13 @@ def _run_agent(provider, lines, ctx, trace, max_steps):
             break
 
         messages.append(Message(role="assistant", text=resp.text, tool_calls=resp.tool_calls))
-        done = False
+        # A turn may contain several calls. Every non-submit call is executed and
+        # answered, so the transcript never holds a function call we ignored --
+        # Gemini rejects a conversation with an unanswered functionCall part.
         for tc in resp.tool_calls:
             if tc.name == SUBMIT_TOOL.name:
-                final_args, done = tc.args, True
-                break
+                final_args = tc.args
+                continue
             result, ms = _run_tool(ctx, tc)
             trace.tool_call(step=step, name=tc.name, args=tc.args, result=result, latency_ms=ms)
             messages.append(
@@ -271,7 +270,7 @@ def _run_agent(provider, lines, ctx, trace, max_steps):
                     tool_result=result,
                 )
             )
-        if done:
+        if final_args is not None:
             break
 
     # -- forced answer + validation ---------------------------------------
@@ -299,6 +298,9 @@ def _run_agent(provider, lines, ctx, trace, max_steps):
                 trace.validation(attempt=attempt, ok=False, errors=errors)
                 messages.append(Message(role="user", text=RETRY_PREFIX.format(errors=errors[0])))
                 continue
+            # Record the call in the transcript here, so the retry branch below
+            # never has to append it again (which would duplicate the turn).
+            messages.append(Message(role="assistant", tool_calls=[call]))
             final_args = call.args
 
         diagnosis, errors = validate(final_args, lines, ctx.retrieved_doc_ids)
@@ -306,13 +308,9 @@ def _run_agent(provider, lines, ctx, trace, max_steps):
         if diagnosis is not None:
             return diagnosis, attempt, [], step
         if attempt < MAX_VALIDATION_ATTEMPTS:
-            messages.append(
-                Message(
-                    role="assistant",
-                    text=None,
-                    tool_calls=[ToolCall(name=SUBMIT_TOOL.name, args=final_args, id="final")],
-                )
-            )
+            # The rejected submit_diagnosis call is already the last assistant
+            # turn, whether it came from the tool phase or the forced call, so
+            # only the feedback needs appending.
             messages.append(
                 Message(
                     role="user",
