@@ -1,0 +1,8 @@
+# Runtime (pinned for reproducible CI and Hugging Face Space builds)
+google-genai==2.25.0
+groq==0.33.0
+pydantic==2.13.5
+python-dotenv==1.2.3
+numpy==2.3.4
+rank-bm25==0.2.2
+gradio==5.49.1

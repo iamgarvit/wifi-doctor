@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.env
+
+# wifi-doctor
+.venv/
+runs/
+.cache/
+results/**/traces/
