@@ -16,6 +16,7 @@ from wifi_doctor.llm import (
     ProviderError,
     RateLimitError,
     ToolCall,
+    _is_daily_quota,
     _is_retryable,
     _retry_after_seconds,
     build_provider,
@@ -80,6 +81,20 @@ def test_non_retryable_error_propagates_immediately():
     slept: list[float] = []
     p = Flaky(ProviderError("400 INVALID_ARGUMENT"), 1, sleep=slept.append)
     with pytest.raises(ProviderError):
+        p.generate(system="s", messages=[])
+    assert p.attempts == 1 and slept == []
+
+
+def test_daily_quota_is_not_retried():
+    slept: list[float] = []
+    exc = RateLimitError(
+        "429 RESOURCE_EXHAUSTED {'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier',"
+        " 'retryDelay': '59s'}"
+    )
+    assert _is_daily_quota(exc)
+    assert not _is_daily_quota(RateLimitError("429 RESOURCE_EXHAUSTED PerMinute"))
+    p = Flaky(exc, 1, sleep=slept.append)
+    with pytest.raises(RateLimitError):
         p.generate(system="s", messages=[])
     assert p.attempts == 1 and slept == []
 

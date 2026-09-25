@@ -6,6 +6,7 @@ colorTo: gray
 sdk: gradio
 sdk_version: 6.28.0
 app_file: app.py
+python_version: "3.12"
 pinned: false
 license: mit
 short_description: LLM agent that diagnoses Wi-Fi failures from supplicant logs
@@ -16,9 +17,7 @@ short_description: LLM agent that diagnoses Wi-Fi failures from supplicant logs
 **An LLM agent that reads a `wpa_supplicant` log and tells you why the Wi-Fi failed — and
 shows you the exact lines it used as proof.**
 
-- **Live demo:** _TODO — paste your Hugging Face Space URL here after the first deploy._
-- **Screenshot:** _TODO — run `python app.py`, open <http://127.0.0.1:7860>, and save a
-  screenshot to `docs/screenshot.png`; this line becomes `![wifi-doctor](docs/screenshot.png)`._
+![wifi-doctor diagnosing a handshake-timeout log](docs/screenshot.png)
 
 Wi-Fi logs are long, repetitive and mostly noise, and the one line that matters is usually
 indistinguishable from the twenty that do not. `wifi-doctor` gives a model four tools, a
@@ -82,7 +81,8 @@ flowchart LR
     J --> N
 ```
 
-The whole loop is about forty lines in [`src/wifi_doctor/agent.py`](src/wifi_doctor/agent.py).
+The loop is `_run_agent` in [`src/wifi_doctor/agent.py`](src/wifi_doctor/agent.py), about a
+hundred lines.
 
 ---
 
@@ -109,28 +109,13 @@ Provider **gemini**, model **`gemini-3.5-flash-lite`**, run on **2026-09-25** ag
 Full report with per-class breakdowns, confusion matrices and the worst failures: [`results/2026-09-25_gemini_gemini-3.5-flash-lite/report.md`](results/2026-09-25_gemini_gemini-3.5-flash-lite/report.md).
 <!-- RESULTS:END -->
 
-### Coverage, and why it is 33 logs and not 66
+### Coverage
 
-The test split has 66 logs. The agent completed 37 of them before the run hit Google's
-free-tier ceiling of **500 requests per day per model** — a number the API told me itself:
-
-```
-429 RESOURCE_EXHAUSTED  quotaId "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
-                        model "gemini-3.5-flash-lite"  quotaValue "500"
-```
-
-That is exactly the default `LLM_RPD` in `.env.example`, and the client-side limiter would
-have stopped the run cleanly at 500. I overrode it with `--rpd 1400` on a guess about the
-tier, so the run sailed past the local guard and hit the server-side wall instead. The
-client-side limiter was right and the override was wrong; `eval/run_eval.py` now warns when
-`--rpd` is raised above a verified ceiling, and `config.py` records the verified values.
-
-So that the three modes stay comparable, **all of them are reported on the same first 33
-logs** — a balanced prefix of 3 per class, since the generator cycles the label set. The six
-cases that errored on quota were deleted from the resume cache rather than scored, so no
-429 is counted as a wrong answer. To finish the remaining 33 logs once the quota resets,
-re-run the same command without `--limit`; the cache means only the unfinished cases cost
-anything:
+These results cover 33 of the 66 held-out test logs (3 per class, the same 33 for every mode)
+because the run hit the Gemini free tier's daily request quota. At 3 examples per class one
+case moves accuracy by 3 points, so the gaps between modes are directional rather than
+statistically meaningful. To finish the run once the quota resets (finished cases are cached
+and not re-sent):
 
 ```bash
 python eval/run_eval.py --split test --modes baseline single_shot agent \
@@ -146,6 +131,11 @@ by `scripts/update_readme_results.py`. Nothing here is estimated.
 
 - *Evidence precision/recall* compare the line numbers the model cited against the
   generator's ground-truth evidence lines, micro-averaged over the non-`HEALTHY` cases.
+  The agent's precision is below the baseline's because it cites more lines (2.8 per
+  failing log against 2.1), and 25 of its 27 citations outside the ground truth are on logs
+  it diagnosed correctly: neighbouring lines from the same failure sequence, such as the
+  resulting `CTRL-EVENT-DISCONNECTED`, the `EAP-STARTED`/`EAP-METHOD` lines or a signal
+  reading, that the minimal ground-truth set does not include.
 - *Hallucinated evidence* is the share of returned citations whose line number does not
   exist or whose quote does not occur on the cited line. Validation runs before the answer
   is returned, so this measures what got through, not what was first attempted.
@@ -159,12 +149,11 @@ by `scripts/update_readme_results.py`. Nothing here is estimated.
 
 ## Design decisions
 
-**Why a hand-written agent loop rather than a framework.** The loop is short, and every
-decision that matters in this project lives inside it: when tool calls stop and the final
-answer is forced, what counts as a valid answer, what exactly gets fed back on a retry, and
-what lands in the trace. A framework would hide precisely those decisions behind defaults
-that I would then have to explain anyway. Forty lines I can defend beat four hundred I
-inherited.
+**Why a hand-written agent loop rather than a framework.** The loop is about a hundred
+lines, and every decision that matters in this project lives inside it: when tool calls stop
+and the final answer is forced, what counts as a valid answer, what exactly gets fed back on
+a retry, and what lands in the trace. A framework would hide precisely those decisions
+behind defaults that I would then have to explain anyway.
 
 **Why the model cannot see the log.** In agent mode the log is only reachable through
 `search_log` and `get_timeline`. That is not a limitation, it is the mechanism: a model that
@@ -250,18 +239,11 @@ the agent is not worth its API calls.
   not a generated class, and SAE fails at a different point in the state machine
   (`AUTHENTICATING`, not `4WAY_HANDSHAKE`), so the trained intuitions do not transfer.
 - **English-only knowledge base**, and English-only prompts.
-- **Small reported sample.** 33 logs, 3 per class (see *Coverage* above). With 3 examples per
-  class, a single case is 3 percentage points of accuracy and one whole point of per-class
-  recall. The ordering baseline < single-shot < agent is consistent across accuracy,
-  macro-F1, false-alarm rate and evidence recall, but the individual gaps are not
-  statistically meaningful at this size. Treat the table as directional, not as a leaderboard.
 - **Confidence is not calibrated.** On the reported run the agent's mean confidence was
-  **1.00 when it was right and 1.00 when it was wrong**, and it never set
-  `needs_more_info` of its own accord. The `confidence` field is currently decorative;
-  do not gate anything on it. The rule baseline is no better (0.79 vs 0.78). Making
-  confidence mean something — verbalised uncertainty, self-consistency across samples, or
-  a calibrated head over the evidence count — is the most valuable next piece of work here,
-  and the evaluation harness already measures it.
+  **1.00 when it was right and 1.00 when it was wrong**, so do not gate anything on it.
+  Making it mean something (verbalised uncertainty, self-consistency across samples, or a
+  calibrated head over the evidence count) is the most valuable next piece of work, and the
+  evaluation harness already measures it.
 - **One model, one day.** Everything was measured on a single provider and model on the date
   recorded, with temperature 0. No repeated-run variance is reported.
 - **The agent's token cost grows with the conversation.** Tool results are resent on every
@@ -274,7 +256,7 @@ the agent is not worth its API calls.
 Python 3.11+.
 
 ```bash
-git clone https://github.com/<you>/wifi-doctor && cd wifi-doctor
+git clone https://github.com/iamgarvit/wifi-doctor && cd wifi-doctor
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 pip install -e .
@@ -291,6 +273,9 @@ ever printed, logged or written to a trace.
 ```bash
 python app.py               # http://127.0.0.1:7860
 ```
+
+One agent diagnosis takes about 25 s (median 25.4 s on the evaluation run); single-shot
+takes about 2.4 s.
 
 **One log from the command line:**
 
@@ -326,8 +311,8 @@ with exponential backoff, honouring the provider's own `retryDelay` hint when it
 **Tests:**
 
 ```bash
-pytest -q          # 125 tests, fully offline (MockProvider, BM25-only retrieval)
-                   # 11 of them need gradio and skip without it, as CI does
+pytest -q          # 128 tests, fully offline (MockProvider, BM25-only retrieval)
+                   # 12 of them need gradio and skip without it, as CI does
 ruff check . && ruff format --check .
 ```
 
@@ -335,18 +320,43 @@ ruff check . && ruff format --check .
 
 ## Deploying to Hugging Face Spaces
 
-1. Create a Space: **New Space** → SDK **Gradio**, hardware **CPU basic (free)**.
-2. In the Space's **Settings → Variables and secrets**, add a secret named
-   `GEMINI_API_KEY`. Optionally add `DEMO_MAX_RUNS_PER_SESSION` and `DEMO_DAILY_CAP` as
-   plain variables.
-3. Create a Hugging Face **write** token at <https://huggingface.co/settings/tokens>.
-4. In the GitHub repo: **Settings → Secrets and variables → Actions** → add the secret
-   `HF_TOKEN`, and add a repository *variable* `HF_SPACE` set to `<your-username>/wifi-doctor`.
-5. Push to `main`. `.github/workflows/sync-to-hf.yml` mirrors the repo into the Space, and
-   the Space builds from the YAML front matter at the top of this README.
+Free accounts can no longer run a Space on CPU basic, so the demo targets a **ZeroGPU**
+Gradio Space (`zero-a10g`). The app never uses the GPU: every model call goes to the Gemini
+API, it does not import torch, and nothing is decorated with `@spaces.GPU`.
 
-The front matter is what makes this file serve double duty as the Space card; that is the
-standard "sync to hub" pattern and is why it is here rather than in a separate folder.
+```bash
+pip install huggingface_hub
+export HF_TOKEN=...          # a Hugging Face token with write access
+export GEMINI_API_KEY=...    # stored as a Space secret, never printed
+python scripts/deploy_space.py
+```
+
+[`scripts/deploy_space.py`](scripts/deploy_space.py) creates the public Space
+`iamgarvit/wifi-doctor` if it does not exist, sets the `GEMINI_API_KEY` secret and the
+variables below, uploads every git-tracked file except `.env`, `.venv/`, `runs/` and the
+results caches, and waits until the Space reports `RUNNING`. Run it again to redeploy. If
+the Hub refuses to create the Space (HTTP 402 or 403, e.g. because the account is not
+allowed a ZeroGPU Space), the script stops without creating anything.
+
+| Space variable | value | why |
+|---|---|---|
+| `LLM_MODEL` | `gemini-3.1-flash-lite` | Gemini's free quota is per model, so the demo never spends the evaluation model's budget |
+| `DEMO_MAX_RUNS_PER_SESSION` | `5` | one visitor cannot use up the day |
+| `DEMO_DAILY_CAP` | `50` | about 6 API requests per diagnosis, so at most ~300 requests a day |
+| `WIFI_DOCTOR_EMBEDDINGS` | `0` | BM25-only retrieval (see below) |
+
+**The demo is not the evaluated configuration.** The results above are for
+`gemini-3.5-flash-lite` with hybrid retrieval; the Space runs `gemini-3.1-flash-lite` with
+BM25-only retrieval, and the footer of the demo shows both. The embedding model itself is
+cheap (on a CPU container `bge-small-en-v1.5` loaded and indexed the knowledge base in about
+14 s cold, including the download, and 7 s warm, with 20 ms queries), but it needs
+`sentence-transformers` and torch, which took 5.8 GB of disk to install. That is too much
+to add for a 28-document knowledge base, so the Space leaves it out.
+
+`.github/workflows/sync-to-hf.yml` runs the same script on every push to `main` when the
+repository has an `HF_TOKEN` secret, and skips cleanly when it does not. It leaves the Space's
+`GEMINI_API_KEY` secret untouched. The YAML front matter at the top of this README is the
+Space's configuration card.
 
 ---
 
@@ -369,10 +379,10 @@ src/wifi_doctor/
 
 kb/              28 markdown docs: 802.11 code tables, state machine, per-class notes
 data/synthetic/  dev (44) and test (66) cases with ground-truth evidence line numbers
-scripts/         log generator; README results injector
+scripts/         log generator; README results injector; Space deploy
 eval/            metrics + the evaluation CLI
-tests/           125 offline tests
-docs/            sample traces
+tests/           128 offline tests
+docs/            sample traces, demo screenshot
 app.py           the Gradio demo
 ```
 

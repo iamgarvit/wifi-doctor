@@ -1,4 +1,4 @@
-"""Gradio demo for wifi-doctor, deployable to Hugging Face Spaces (CPU only).
+"""Gradio demo for wifi-doctor, deployable to a Hugging Face Space. Needs no GPU.
 
 Public-demo discipline lives in :func:`_check_quota`: a per-session run cap and
 a process-wide daily cap, both configurable, plus a friendly message instead of
@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 from wifi_doctor.agent import diagnose
 from wifi_doctor.baseline import classify
 from wifi_doctor.config import ROOT, get_settings
-from wifi_doctor.llm import ProviderError, build_provider
+from wifi_doctor.llm import ProviderError, RateLimitError, build_provider
 from wifi_doctor.logparse import split_lines, truncate_for_prompt
 from wifi_doctor.ratelimit import DailyQuotaExceeded, RateLimiter
 from wifi_doctor.redact import redact_log
@@ -277,13 +277,15 @@ def run_diagnosis(log_text, file_obj, mode, session_runs):
             kb=get_kb(),
             trace_enabled=False,
         )
-    except DailyQuotaExceeded:
+    except (DailyQuotaExceeded, RateLimitError):
+        # Either the local daily budget (LLM_RPD) or the provider's own quota,
+        # which the provider layer gives up on without a long backoff.
         return (
             gr.update(
                 value=(
-                    "### Free-tier quota spent\n\nThe configured daily request budget "
-                    "(`LLM_RPD`) is used up. Try again tomorrow, or use the **rule baseline** "
-                    "mode, which needs no API access."
+                    "### Free-tier quota spent\n\nThe model's free daily request quota is "
+                    "used up, or the provider is rate-limiting this Space. Try again later, "
+                    "or use the **rule baseline** mode, which needs no API access."
                 )
             ),
             "",
@@ -358,7 +360,8 @@ def build_ui() -> gr.Blocks:
                 gr.Markdown(
                     f"<sub>Public demo: {settings.demo_max_runs_per_session} runs per session, "
                     f"{settings.demo_daily_cap} per day. Model: "
-                    f"<code>{settings.model}</code>.</sub>"
+                    f"<code>{settings.model}</code>, retrieval: "
+                    f"<code>{get_kb().backend}</code>.</sub>"
                 )
             with gr.Column(scale=7), gr.Tabs():
                 with gr.Tab("Diagnosis"):
