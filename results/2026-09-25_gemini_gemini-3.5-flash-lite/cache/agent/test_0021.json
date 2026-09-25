@@ -1,0 +1,26 @@
+{
+  "case_id": "test_0021",
+  "mode": "agent",
+  "truth": "HEALTHY",
+  "predicted": "HEALTHY",
+  "truth_lines": [],
+  "cited_lines": [
+    31,
+    32
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 2,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 6,
+  "api_requests": 6,
+  "total_tokens": 34193,
+  "wall_ms": 49961.5,
+  "llm_latency_ms": 30402.4,
+  "variant": "misleading",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/agent/test_0021.jsonl",
+  "error": null
+}

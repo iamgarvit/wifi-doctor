@@ -1,0 +1,35 @@
+{
+  "case_id": "test_0022",
+  "mode": "agent",
+  "truth": "WRONG_PASSWORD",
+  "predicted": "WRONG_PASSWORD",
+  "truth_lines": [
+    25,
+    27,
+    51,
+    53,
+    78,
+    80,
+    102,
+    104
+  ],
+  "cited_lines": [
+    26,
+    27
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 2,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 7,
+  "api_requests": 7,
+  "total_tokens": 37074,
+  "wall_ms": 25380.1,
+  "llm_latency_ms": 25257.8,
+  "variant": "truncated",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/agent/test_0022.jsonl",
+  "error": null
+}

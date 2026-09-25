@@ -1,0 +1,29 @@
+{
+  "case_id": "test_0015",
+  "mode": "agent",
+  "truth": "AP_DEAUTH",
+  "predicted": "AP_DEAUTH",
+  "truth_lines": [
+    55,
+    56
+  ],
+  "cited_lines": [
+    55,
+    56
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 2,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 7,
+  "api_requests": 7,
+  "total_tokens": 67844,
+  "wall_ms": 17887.5,
+  "llm_latency_ms": 9205.1,
+  "variant": "transient_recovery",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/agent/test_0015.jsonl",
+  "error": null
+}

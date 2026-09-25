@@ -1,0 +1,33 @@
+{
+  "case_id": "test_0012",
+  "mode": "agent",
+  "truth": "HANDSHAKE_TIMEOUT",
+  "predicted": "HANDSHAKE_TIMEOUT",
+  "truth_lines": [
+    35,
+    36,
+    39,
+    41,
+    42
+  ],
+  "cited_lines": [
+    36,
+    39,
+    42
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 3,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 7,
+  "api_requests": 7,
+  "total_tokens": 45559,
+  "wall_ms": 39199.7,
+  "llm_latency_ms": 10260.6,
+  "variant": "transient_recovery",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/agent/test_0012.jsonl",
+  "error": null
+}

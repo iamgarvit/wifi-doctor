@@ -59,6 +59,7 @@ EAP_IDENTITIES = [
 ]
 
 VARIANTS = ["plain", "heavy_noise", "misleading", "truncated", "transient_recovery"]
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 
 def _mac(rng: random.Random) -> str:
@@ -96,7 +97,13 @@ class Emitter:
 
     def _stamp(self, advance_ms: int) -> str:
         self.t += timedelta(milliseconds=advance_ms)
-        return self.t.strftime("%b %d %H:%M:%S")
+        # strftime("%b") is locale-dependent, which would make the generated
+        # corpus differ between machines. CI checks the dataset regenerates
+        # byte-identically, so the month name is spelled out here instead.
+        return (
+            f"{MONTHS[self.t.month - 1]} {self.t.day:02d} "
+            f"{self.t.hour:02d}:{self.t.minute:02d}:{self.t.second:02d}"
+        )
 
     def emit(self, source: str, text: str, *, ev: bool = False, gap: int | None = None) -> int:
         """Append one line. Returns its 1-based line number."""
