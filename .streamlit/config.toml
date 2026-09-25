@@ -1,0 +1,18 @@
+# Streamlit settings for streamlit_app.py. Community Cloud reads this file from
+# the repository root. Secrets do NOT go here: see .streamlit/secrets.toml
+# (gitignored) locally, or the app's Secrets field on Community Cloud.
+
+[theme]
+base = "light"
+primaryColor = "#4f46e5"
+
+[server]
+headless = true
+# Logs are text; 5 MB is ample and keeps a public demo from buffering big uploads.
+maxUploadSize = 5
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

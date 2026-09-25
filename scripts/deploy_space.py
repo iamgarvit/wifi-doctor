@@ -1,10 +1,15 @@
 """Create or update the Hugging Face Space that hosts the Gradio demo.
 
     HF_TOKEN=... GEMINI_API_KEY=... python scripts/deploy_space.py
+    python scripts/deploy_space.py --dry-run    # show what would be uploaded
 
 Idempotent: it creates the Space only if it does not exist, (re)sets the
 Space's secret and variables, uploads every git-tracked file except the
 exclusions below, and then waits for the Space to come up.
+
+The Space's README.md is ``hf_space_card.md``, whose YAML front matter is the
+Space's configuration; the GitHub README is not uploaded. ``--dry-run`` prints
+the upload plan without a token and without calling the Hub.
 
 Both credentials are read from the environment and passed straight to the Hub
 API. Neither is ever printed, logged or written to a file.
@@ -25,10 +30,10 @@ import sys
 import time
 from pathlib import Path
 
-from huggingface_hub import HfApi
-from huggingface_hub.utils import HfHubHTTPError, RepositoryNotFoundError
-
 ROOT = Path(__file__).resolve().parents[1]
+
+# Uploaded as the Space's README.md; the GitHub README.md is not uploaded.
+SPACE_CARD = "hf_space_card.md"
 
 # Never uploaded, even if tracked by git.
 EXCLUDE = [
@@ -46,19 +51,54 @@ INCLUDE_ANYWAY = {".env.example"}
 TERMINAL_ERRORS = {"BUILD_ERROR", "RUNTIME_ERROR", "CONFIG_ERROR", "NO_APP_FILE", "DELETED"}
 
 
-def tracked_files() -> list[str]:
+def git_files() -> list[str]:
     out = subprocess.run(
         ["git", "ls-files", "-z"], cwd=ROOT, check=True, capture_output=True, text=True
     ).stdout
-    files = [f for f in out.split("\0") if f]
-    return [
-        f
-        for f in files
-        if f in INCLUDE_ANYWAY or not any(fnmatch.fnmatch(f, pat) for pat in EXCLUDE)
-    ]
+    return [f for f in out.split("\0") if f]
 
 
-def ensure_space(api: HfApi, repo_id: str, hardware: str) -> None:
+def is_excluded(path: str) -> bool:
+    return path not in INCLUDE_ANYWAY and any(fnmatch.fnmatch(path, pat) for pat in EXCLUDE)
+
+
+def upload_plan(files: list[str]) -> dict[str, str]:
+    """Map each path in the Space to the repository file it is uploaded from."""
+    if SPACE_CARD not in files:
+        sys.exit(f"{SPACE_CARD} is missing; the Space would have no configuration.")
+    plan = {f: f for f in files if not is_excluded(f) and f not in ("README.md", SPACE_CARD)}
+    plan["README.md"] = SPACE_CARD
+    return dict(sorted(plan.items()))
+
+
+def card_config(card_path: Path) -> dict[str, str]:
+    """The top-level keys of the card's YAML front matter (flat, as the Hub uses it)."""
+    text = card_path.read_text()
+    if not text.startswith("---\n"):
+        return {}
+    header = text[4 : text.index("\n---", 4)]
+    out = {}
+    for line in header.splitlines():
+        key, sep, value = line.partition(":")
+        if sep and not line.startswith(" "):
+            out[key.strip()] = value.strip().strip('"')
+    return out
+
+
+def check_plan(plan: dict[str, str]) -> dict[str, str]:
+    """Fail early on a card the Hub would reject or that points at a missing app."""
+    cfg = card_config(ROOT / plan["README.md"])
+    if cfg.get("sdk") != "gradio":
+        sys.exit(f"{SPACE_CARD}: expected 'sdk: gradio' in its front matter, got {cfg!r}")
+    app_file = cfg.get("app_file", "app.py")
+    if app_file not in plan:
+        sys.exit(f"{SPACE_CARD}: app_file {app_file!r} is not in the upload")
+    return cfg
+
+
+def ensure_space(api, repo_id: str, hardware: str) -> None:
+    from huggingface_hub.utils import HfHubHTTPError, RepositoryNotFoundError
+
     try:
         info = api.space_info(repo_id)
     except RepositoryNotFoundError:
@@ -94,7 +134,7 @@ def ensure_space(api: HfApi, repo_id: str, hardware: str) -> None:
         api.request_space_hardware(repo_id, hardware)
 
 
-def configure(api: HfApi, repo_id: str, variables: dict[str, str]) -> None:
+def configure(api, repo_id: str, variables: dict[str, str]) -> None:
     if key := os.environ.get("GEMINI_API_KEY"):
         api.add_space_secret(repo_id, "GEMINI_API_KEY", key)
         print("Set secret GEMINI_API_KEY")
@@ -105,22 +145,40 @@ def configure(api: HfApi, repo_id: str, variables: dict[str, str]) -> None:
         print(f"Set variable {name}={value}")
 
 
-def upload(api: HfApi, repo_id: str) -> None:
-    files = tracked_files()
-    print(f"Uploading {len(files)} tracked files")
-    commit = api.upload_folder(
+def upload(api, repo_id: str, plan: dict[str, str]) -> None:
+    from huggingface_hub import CommitOperationAdd, CommitOperationDelete
+
+    ops = [
+        CommitOperationAdd(path_in_repo=dest, path_or_fileobj=str(ROOT / src))
+        for dest, src in plan.items()
+    ]
+    # Remove files that are no longer part of the upload. .gitattributes is the Hub's own.
+    remote = api.list_repo_files(repo_id, repo_type="space")
+    stale = [f for f in remote if f not in plan and f != ".gitattributes"]
+    ops += [CommitOperationDelete(path_in_repo=f) for f in stale]
+    print(f"Uploading {len(plan)} files, deleting {len(stale)} stale ones")
+    commit = api.create_commit(
         repo_id=repo_id,
         repo_type="space",
-        folder_path=ROOT,
-        allow_patterns=files,
-        # Remove files that no longer exist in the repo. .gitattributes is kept.
-        delete_patterns="*",
+        operations=ops,
         commit_message="Sync from GitHub",
     )
     print(f"Committed {commit.oid[:8]}")
 
 
-def wait_until_running(api: HfApi, repo_id: str, timeout_s: int) -> bool:
+def print_plan(plan: dict[str, str], cfg: dict[str, str], files: list[str]) -> None:
+    print(f"Would upload {len(plan)} files to the Space:")
+    for dest, src in plan.items():
+        print(f"  {dest}" + (f"  <- {src}" if dest != src else ""))
+    print("Not uploaded: README.md (the GitHub README)")
+    for pat in EXCLUDE:
+        n = sum(1 for f in files if f not in INCLUDE_ANYWAY and fnmatch.fnmatch(f, pat))
+        if n:
+            print(f"  {n} file(s) matching {pat}")
+    print("Space card: " + ", ".join(f"{k}={v}" for k, v in cfg.items()))
+
+
+def wait_until_running(api, repo_id: str, timeout_s: int) -> bool:
     deadline = time.monotonic() + timeout_s
     last = None
     while time.monotonic() < deadline:
@@ -149,12 +207,22 @@ def main() -> int:
     p.add_argument("--daily-cap", type=int, default=50)
     p.add_argument("--timeout", type=int, default=900, help="seconds to wait for RUNNING")
     p.add_argument("--no-wait", action="store_true")
+    p.add_argument("--dry-run", action="store_true", help="print the upload plan and stop")
     args = p.parse_args()
+
+    files = git_files()
+    plan = upload_plan(files)
+    cfg = check_plan(plan)
+    if args.dry_run:
+        print_plan(plan, cfg, files)
+        return 0
 
     token = os.environ.get("HF_TOKEN")
     if not token:
         print("HF_TOKEN is not set; nothing to deploy.")
         return 0
+
+    from huggingface_hub import HfApi
 
     api = HfApi(token=token)
     ensure_space(api, args.space, args.hardware)
@@ -169,7 +237,7 @@ def main() -> int:
             "WIFI_DOCTOR_EMBEDDINGS": "0",
         },
     )
-    upload(api, args.space)
+    upload(api, args.space, plan)
     print(f"https://huggingface.co/spaces/{args.space}")
     if args.no_wait:
         return 0

@@ -1,8 +1,9 @@
 name: Sync to Hugging Face Space
 
+# Manual only: the live demo is on Streamlit Community Cloud, and the Hugging
+# Face Space is the alternative route (it needs a paid plan). Run it from the
+# Actions tab when the Space should be updated.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -25,9 +26,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      # The Hub rejects plain-git pushes of binary files (the results PNGs), so
-      # sync through the Hub API rather than `git push`. The Space's
-      # GEMINI_API_KEY secret is left as it is: it is not passed in here.
+      # Uploads through the Hub API, with hf_space_card.md as the Space's
+      # README.md. The Space's GEMINI_API_KEY secret is left as it is: it is
+      # not passed in here.
       - name: Upload to the Space
         if: env.HF_TOKEN != ''
         run: |
