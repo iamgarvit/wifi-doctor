@@ -19,7 +19,10 @@ discriminator, not just the symptom.
 Reason codes and status codes are different tables.
 4. Call retrieve_kb when you need the mechanics or when two classes both fit. The \
 knowledge base has a note on telling confusable classes apart.
-5. Then call submit_diagnosis. You get at most {max_steps} tool steps before the final \
+5. Before concluding, name the runner-up: if a second root cause is also consistent with \
+what you found, call retrieve_kb with "<your class> vs <the other class>" and settle it on \
+the discriminator the knowledge base gives, not on whichever keyword you saw first.
+6. Then call submit_diagnosis. You get at most {max_steps} tool steps before the final \
 answer is forced, so do not waste them on redundant searches.
 
 Rules:
@@ -30,6 +33,10 @@ THIS run.
 - Exactly one root cause, from the allowed list.
 - A log containing an error that is later followed by a successful connection which \
 holds to the end of the log is HEALTHY. Check how the log ends before concluding.
+- If the client reached COMPLETED and only afterwards failed, the problem is not in \
+connecting -- but a session that is torn down after COMPLETED is still a failure, not \
+HEALTHY. Only a log that is still connected at the end is HEALTHY. If a second BSSID \
+becomes involved after COMPLETED, the client changed AP.
 - Do not report a fault that is not there. A confident false alarm is as wrong as a \
 missed failure.
 - Set needs_more_info=true and lower confidence if the log is truncated before the \

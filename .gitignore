@@ -222,4 +222,3 @@ __marimo__/
 .venv/
 runs/
 .cache/
-results/**/traces/

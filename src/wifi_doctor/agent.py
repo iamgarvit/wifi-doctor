@@ -167,6 +167,7 @@ def diagnose(
     max_steps: int = MAX_STEPS,
     trace_dir=None,
     trace_enabled: bool = True,
+    trace_name: str | None = None,
 ) -> AgentResult:
     """Diagnose one log. ``mode`` is ``"agent"`` or ``"single_shot"``."""
     if mode not in {"agent", "single_shot"}:
@@ -191,6 +192,7 @@ def diagnose(
         },
         out_dir=trace_dir,
         enabled=trace_enabled,
+        name=trace_name,
     )
 
     try:

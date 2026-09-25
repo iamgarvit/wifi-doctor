@@ -4,5 +4,4 @@
 sentence-transformers==5.1.2
 pytest==8.4.2
 ruff==0.14.0
-matplotlib==3.10.7
-scikit-learn==1.7.2
+matplotlib==3.11.2

@@ -44,12 +44,19 @@ class Trace:
 
     # -- lifecycle ---------------------------------------------------------
     @classmethod
-    def start(cls, meta: dict, *, out_dir: Path | None = None, enabled: bool = True) -> Trace:
+    def start(
+        cls,
+        meta: dict,
+        *,
+        out_dir: Path | None = None,
+        enabled: bool = True,
+        name: str | None = None,
+    ) -> Trace:
         t = cls()
         if enabled:
             base = out_dir or (RUNS_DIR / datetime.now(UTC).strftime("%Y%m%dT%H%M%S"))
             base.mkdir(parents=True, exist_ok=True)
-            t.path = base / f"{t.run_id}.jsonl"
+            t.path = base / f"{name or t.run_id}.jsonl"
             t._fh = t.path.open("w")
         t.event("run_start", **meta)
         return t

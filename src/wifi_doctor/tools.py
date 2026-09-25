@@ -13,6 +13,7 @@ API wants.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -68,12 +69,33 @@ def search_log(ctx: ToolContext, pattern: str, max_hits: int = 10) -> dict:
     }
 
 
+# BSSIDs only count as "involved" when the client actually tried to use them --
+# a BSS merely appearing in a scan result says nothing. Two involved BSSIDs in
+# one session is the signature of a roam, which is otherwise very hard to see.
+_BSSID_CONTEXT_RE = re.compile(
+    r"(?:Trying to authenticate with|Trying to associate with|Associated with|"
+    r"authenticate with|associate with|deauthenticated from|Connection to|"
+    r"bssid=|RX AssocResp from)\s*(<MAC_\d+>)"
+)
+
+
+def involved_bssids(lines: list[str]) -> list[str]:
+    seen: dict[str, int] = {}
+    for line in lines:
+        for mac in _BSSID_CONTEXT_RE.findall(line):
+            seen[mac] = seen.get(mac, 0) + 1
+    return sorted(seen, key=lambda m: (-seen[m], m))
+
+
 def get_timeline(ctx: ToolContext) -> dict:
     """Parsed supplicant state transitions plus every CTRL-EVENT line."""
     lines = ctx.redacted_lines
     trans = transitions(lines)
     events = ctrl_events(lines)
+    bssids = involved_bssids(lines)
     return {
+        "bssids_involved": bssids,
+        "n_bssids_involved": len(bssids),
         "total_lines": len(lines),
         "states": [{"line_no": t.line_no, "from": t.frm, "to": t.to} for t in trans],
         "furthest_state": _furthest_state(trans),
@@ -187,9 +209,10 @@ TOOL_SPECS: list[ToolSpec] = [
         name="get_timeline",
         description=(
             "Return the parsed wpa_supplicant state transitions and every CTRL-EVENT line, "
-            "each with its 1-based line number, plus the furthest state reached and the "
-            "weakest reported signal. Call this first: the furthest state bounds which "
-            "root causes are possible at all."
+            "each with its 1-based line number, plus the furthest state reached, the "
+            "weakest reported signal, and which BSSIDs the client actually tried to use. "
+            "Call this first: the furthest state bounds which root causes are possible at "
+            "all, and more than one involved BSSID means the client changed AP."
         ),
         parameters={"type": "object", "properties": {}},
         fn=get_timeline,
