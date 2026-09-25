@@ -6,6 +6,7 @@ colorTo: gray
 sdk: gradio
 sdk_version: 6.28.0
 app_file: app.py
+python_version: "3.12"
 pinned: false
 license: mit
 short_description: LLM agent that diagnoses Wi-Fi failures from supplicant logs

@@ -8,22 +8,28 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      # Optional repository variable; the deploy script defaults to iamgarvit/wifi-doctor.
+      HF_SPACE: ${{ vars.HF_SPACE }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # The Space is a git repo of its own; a full history avoids a
-          # non-fast-forward push on the first sync.
-          fetch-depth: 0
-          lfs: true
+      - name: Skip when HF_TOKEN is not configured
+        if: env.HF_TOKEN == ''
+        run: echo "HF_TOKEN secret is not set; skipping the Space sync."
 
-      - name: Push to the Space
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          # e.g. "garvit/wifi-doctor" -- set as a repository variable.
-          HF_SPACE: ${{ vars.HF_SPACE }}
+      - uses: actions/checkout@v4
+        if: env.HF_TOKEN != ''
+
+      - uses: actions/setup-python@v5
+        if: env.HF_TOKEN != ''
+        with:
+          python-version: "3.12"
+
+      # The Hub rejects plain-git pushes of binary files (the results PNGs), so
+      # sync through the Hub API rather than `git push`. The Space's
+      # GEMINI_API_KEY secret is left as it is: it is not passed in here.
+      - name: Upload to the Space
+        if: env.HF_TOKEN != ''
         run: |
-          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE" ]; then
-            echo "HF_TOKEN secret or HF_SPACE variable is not set; skipping sync."
-            exit 0
-          fi
-          git push --force "https://user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" main:main
+          pip install huggingface_hub
+          python scripts/deploy_space.py --no-wait

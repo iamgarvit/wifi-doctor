@@ -1,4 +1,4 @@
-"""Gradio demo for wifi-doctor, deployable to Hugging Face Spaces (CPU only).
+"""Gradio demo for wifi-doctor, deployable to a Hugging Face Space. Needs no GPU.
 
 Public-demo discipline lives in :func:`_check_quota`: a per-session run cap and
 a process-wide daily cap, both configurable, plus a friendly message instead of
@@ -358,7 +358,8 @@ def build_ui() -> gr.Blocks:
                 gr.Markdown(
                     f"<sub>Public demo: {settings.demo_max_runs_per_session} runs per session, "
                     f"{settings.demo_daily_cap} per day. Model: "
-                    f"<code>{settings.model}</code>.</sub>"
+                    f"<code>{settings.model}</code>, retrieval: "
+                    f"<code>{get_kb().backend}</code>.</sub>"
                 )
             with gr.Column(scale=7), gr.Tabs():
                 with gr.Tab("Diagnosis"):
