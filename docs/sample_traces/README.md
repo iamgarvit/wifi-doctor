@@ -9,6 +9,12 @@ README**, copied out of `results/<run>/traces/` so they survive independently of
 one results directory. Run traces from local use land in `runs/<timestamp>/`, which
 is gitignored.
 
+| File | What it shows |
+|---|---|
+| `agent_test_0023.jsonl` | A clean agent run on a `HANDSHAKE_TIMEOUT` log of the `misleading` variant: `get_timeline` → `search_log` → `lookup_code(reason, 15)` → `retrieve_kb` → `search_log`, then a forced `submit_diagnosis` that validates first try. |
+| `agent_test_0006_validation_retry.jsonl` | **The guardrail firing.** The first `submit_diagnosis` cites a quote that does not occur on the line it claims; validation rejects it with the real text of that line, and the retry produces a correct, verifiable answer. |
+| `single_shot_test_0023.jsonl` | The same log in single-shot mode — one `llm_call` with `call_mode: "schema"`, no tools, no retrieval. |
+
 ## Event kinds
 
 | `kind` | When | Key fields |

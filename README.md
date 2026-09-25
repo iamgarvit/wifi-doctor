@@ -26,17 +26,26 @@ small knowledge base, and no direct access to the log, then refuses to accept an
 whose citations it cannot verify.
 
 ```
- in: 195 lines of wpa_supplicant / kernel / dhclient output
-out: HANDSHAKE_TIMEOUT  (confidence 0.90)
-     "The client associated successfully but the 4-way handshake never completed.
-      EAPOL-Key frames timed out three times at -84 dBm and the AP deauthenticated
-      with Reason 15. This is a link-quality failure, not a wrong passphrase — there
-      is no reason=WRONG_KEY temp-disable and the signal is far too weak."
-     evidence  line  88  "CTRL-EVENT-SIGNAL-CHANGE above=0 signal=-84 ..."
-               line  91  "WPA: EAPOL-Key timeout"
-               line  95  "deauthenticated from <MAC_1> (Reason: 15=4WAY_HANDSHAKE_TIMEOUT)"
-     kb        reason-codes, troubleshoot-handshake-timeout, disambiguation-guide
+ in:  200 lines of wpa_supplicant / kernel / dhclient output  (test_0023)
+out:  HANDSHAKE_TIMEOUT          confidence 1.0      6 API requests, 38.7k tokens
+
+      tools called   get_timeline → search_log → lookup_code(reason,15)
+                     → retrieve_kb → search_log
+
+      evidence       line 24  CTRL-EVENT-SIGNAL-CHANGE above=0 signal=-89 noise=-89 txrate=6000
+                     line 25  WPA: EAPOL-Key timeout
+                     line 31  deauthenticated from <MAC_2> (Reason: 15=4WAY_HANDSHAKE_TIMEOUT)
+
+      kb_citations   troubleshoot-handshake-timeout, disambiguation-guide, reason-codes
 ```
+
+That log also contains `WPA: 4-Way Handshake failed - pre-shared key may be incorrect` —
+the line a keyword matcher fires on. The agent did not take the bait: the signal is
+−89 dBm, the EAPOL-Key frames timed out, and there is no `reason=WRONG_KEY`. Every field
+above is copied from the real trace at
+[`docs/sample_traces/agent_test_0023.jsonl`](docs/sample_traces/); the identifiers are
+placeholders because that is genuinely all the model ever saw.
+
 
 ---
 
@@ -80,9 +89,54 @@ The whole loop is about forty lines in [`src/wifi_doctor/agent.py`](src/wifi_doc
 ## Results
 
 <!-- RESULTS:START -->
-_Not yet run. Generate with `python eval/run_eval.py --split test`, then
-`python scripts/update_readme_results.py results/<run>/metrics.json`._
+Provider **gemini**, model **`gemini-3.5-flash-lite`**, run on **2026-09-25** against the held-out **test** split (33 logs, 245 API requests). Retrieval backend: hybrid (`BAAI/bge-small-en-v1.5`).
+
+| metric | rule baseline | single-shot | agent |
+|---|---|---|---|
+| root-cause accuracy | 75.8% | 84.8% | 93.9% |
+| macro-F1 | 0.697 | 0.817 | 0.938 |
+| evidence precision | 82.8% | 62.1% | 68.2% |
+| evidence recall | 44.9% | 45.8% | 49.2% |
+| hallucinated evidence | 0.0% | 0.0% | 0.0% |
+| HEALTHY false-alarm rate | 33.3% | 0.0% | 0.0% |
+| missed-failure rate | 3.3% | 10.0% | 3.3% |
+| schema-valid, first try | 100.0% | 100.0% | 93.9% |
+| schema-valid, after retry | 100.0% | 100.0% | 100.0% |
+| API requests / log | 0.00 | 1.00 | 6.42 |
+| tokens / log | 0 | 11,011 | 44,041 |
+| median latency / log | 0.0s | 2.4s | 25.4s |
+
+Full report with per-class breakdowns, confusion matrices and the worst failures: [`results/2026-09-25_gemini_gemini-3.5-flash-lite/report.md`](results/2026-09-25_gemini_gemini-3.5-flash-lite/report.md).
 <!-- RESULTS:END -->
+
+### Coverage, and why it is 33 logs and not 66
+
+The test split has 66 logs. The agent completed 37 of them before the run hit Google's
+free-tier ceiling of **500 requests per day per model** — a number the API told me itself:
+
+```
+429 RESOURCE_EXHAUSTED  quotaId "GenerateRequestsPerDayPerProjectPerModel-FreeTier"
+                        model "gemini-3.5-flash-lite"  quotaValue "500"
+```
+
+That is exactly the default `LLM_RPD` in `.env.example`, and the client-side limiter would
+have stopped the run cleanly at 500. I overrode it with `--rpd 1400` on a guess about the
+tier, so the run sailed past the local guard and hit the server-side wall instead. The
+client-side limiter was right and the override was wrong; `eval/run_eval.py` now warns when
+`--rpd` is raised above a verified ceiling, and `config.py` records the verified values.
+
+So that the three modes stay comparable, **all of them are reported on the same first 33
+logs** — a balanced prefix of 3 per class, since the generator cycles the label set. The six
+cases that errored on quota were deleted from the resume cache rather than scored, so no
+429 is counted as a wrong answer. To finish the remaining 33 logs once the quota resets,
+re-run the same command without `--limit`; the cache means only the unfinished cases cost
+anything:
+
+```bash
+python eval/run_eval.py --split test --modes baseline single_shot agent \
+    --provider gemini --model gemini-3.5-flash-lite
+python scripts/update_readme_results.py results/<run>/metrics.json
+```
 
 **Every number above came from actually running `eval/run_eval.py`** against the real API on
 the date shown, and is regenerated into this README straight from that run's `metrics.json`
@@ -143,6 +197,15 @@ that was genuinely retrieved during this run. On failure the specific errors —
 real text of the line that was misquoted — go back to the model for exactly one retry. If it
 fails twice, the run returns `needs_more_info=true` rather than a confident guess.
 
+This is not theoretical. On the reported run the guardrail fired on 2 of 33 agent cases
+(schema-valid first try 93.9%, 100% after retry). In
+[`docs/sample_traces/agent_test_0006_validation_retry.jsonl`](docs/sample_traces/) the model
+cited a NetworkManager line with the right process name, the right log format and a
+plausible timestamp — that did not exist. The validator compared the quote to line 41 and
+rejected it with the line's real text; the retry produced a correct, checkable answer. That
+is a hallucinated citation caught and repaired automatically, and it is exactly the failure
+mode a diagnosis tool cannot afford to ship.
+
 **Why redaction happens before anything is sent.** Free-tier LLM APIs generally reserve the
 right to use submitted prompts to improve their products, so anything sent to one should be
 treated as published. A Wi-Fi log is not neutral: a BSSID plus an SSID is a geolocatable
@@ -187,8 +250,18 @@ the agent is not worth its API calls.
   not a generated class, and SAE fails at a different point in the state machine
   (`AUTHENTICATING`, not `4WAY_HANDSHAKE`), so the trained intuitions do not transfer.
 - **English-only knowledge base**, and English-only prompts.
-- **Small test split.** 66 logs, 6 per class. Differences of a couple of points between modes
-  are inside the noise; treat the table as directional, not as a leaderboard.
+- **Small reported sample.** 33 logs, 3 per class (see *Coverage* above). With 3 examples per
+  class, a single case is 3 percentage points of accuracy and one whole point of per-class
+  recall. The ordering baseline < single-shot < agent is consistent across accuracy,
+  macro-F1, false-alarm rate and evidence recall, but the individual gaps are not
+  statistically meaningful at this size. Treat the table as directional, not as a leaderboard.
+- **Confidence is not calibrated.** On the reported run the agent's mean confidence was
+  **1.00 when it was right and 1.00 when it was wrong**, and it never set
+  `needs_more_info` of its own accord. The `confidence` field is currently decorative;
+  do not gate anything on it. The rule baseline is no better (0.79 vs 0.78). Making
+  confidence mean something — verbalised uncertainty, self-consistency across samples, or
+  a calibrated head over the evidence count — is the most valuable next piece of work here,
+  and the evaluation harness already measures it.
 - **One model, one day.** Everything was measured on a single provider and model on the date
   recorded, with temperature 0. No repeated-run variance is reported.
 - **The agent's token cost grows with the conversation.** Tool results are resent on every

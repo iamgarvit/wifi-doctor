@@ -39,7 +39,7 @@ from metrics import (  # noqa: E402
 
 from wifi_doctor.agent import MAX_STEPS, diagnose  # noqa: E402
 from wifi_doctor.baseline import classify  # noqa: E402
-from wifi_doctor.config import ROOT, get_settings  # noqa: E402
+from wifi_doctor.config import ROOT, VERIFIED_FREE_TIER_RPD, get_settings  # noqa: E402
 from wifi_doctor.llm import build_provider  # noqa: E402
 from wifi_doctor.logparse import split_lines  # noqa: E402
 from wifi_doctor.ratelimit import DailyQuotaExceeded, RateLimiter  # noqa: E402
@@ -230,6 +230,13 @@ def main() -> None:
     if not args.no_resume and any(cached.values()):
         print(
             "  resuming: " + ", ".join(f"{m} {cached[m]}/{len(cases)} cached" for m in args.modes)
+        )
+    ceiling = VERIFIED_FREE_TIER_RPD.get(settings.provider)
+    if args.rpd and ceiling and args.rpd > ceiling:
+        print(
+            f"  WARNING: --rpd {args.rpd} is above the verified free-tier ceiling for "
+            f"{settings.provider} ({ceiling}/day). The client-side limiter will not stop the "
+            f"run, so it will fail mid-way with server-side 429s instead. Prefer --limit."
         )
     ok, msg = (
         (True, f"{estimate} requests planned (mock provider: no network)")

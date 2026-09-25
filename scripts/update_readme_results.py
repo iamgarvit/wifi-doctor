@@ -67,7 +67,10 @@ def main() -> None:
     args = ap.parse_args()
 
     data = json.loads(args.metrics.read_text())
-    data["meta"]["run_dir"] = str(args.metrics.parent.relative_to(ROOT))
+    run_dir = args.metrics.resolve().parent
+    data["meta"]["run_dir"] = str(
+        run_dir.relative_to(ROOT) if run_dir.is_relative_to(ROOT) else run_dir
+    )
 
     text = args.readme.read_text()
     if START not in text or END not in text:

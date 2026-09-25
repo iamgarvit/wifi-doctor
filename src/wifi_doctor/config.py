@@ -15,6 +15,15 @@ from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# Verified against the API's own 429 quota message on 2026-09-25:
+#   quotaId "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+#   model "gemini-3.5-flash-lite", quotaValue "500"
+# These are the ceilings the client-side limiter defaults to. Raising LLM_RPD
+# above one of them does not raise the real quota; it only moves the failure
+# from a clean local stop to a server-side 429 mid-run.
+VERIFIED_FREE_TIER_RPD = {"gemini": 500}
+DEFAULT_RPM = 15
+
 DEFAULT_MODELS = {
     # Verified against models.list() for this key on 2026-09-25:
     # gemini-2.5-flash-lite now returns 404 "no longer available to new users"
@@ -81,8 +90,8 @@ def get_settings(provider: str | None = None, model: str | None = None) -> Setti
         model=mdl,
         gemini_api_key=os.environ.get("GEMINI_API_KEY") or None,
         groq_api_key=os.environ.get("GROQ_API_KEY") or None,
-        rpm=_int("LLM_RPM", 15),
-        rpd=_int("LLM_RPD", 500),
+        rpm=_int("LLM_RPM", DEFAULT_RPM),
+        rpd=_int("LLM_RPD", VERIFIED_FREE_TIER_RPD.get(prov, 500)),
         demo_max_runs_per_session=_int("DEMO_MAX_RUNS_PER_SESSION", 5),
         demo_daily_cap=_int("DEMO_DAILY_CAP", 100),
     )
