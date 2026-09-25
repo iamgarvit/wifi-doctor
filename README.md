@@ -17,6 +17,8 @@ short_description: LLM agent that diagnoses Wi-Fi failures from supplicant logs
 **An LLM agent that reads a `wpa_supplicant` log and tells you why the Wi-Fi failed — and
 shows you the exact lines it used as proof.**
 
+**Live demo:** https://wifi-doctor.streamlit.app
+
 ![wifi-doctor diagnosing a handshake-timeout log](docs/screenshot.png)
 
 Wi-Fi logs are long, repetitive and mostly noise, and the one line that matters is usually
@@ -268,10 +270,12 @@ python scripts/generate_logs.py
 Get a free key at <https://aistudio.google.com/apikey>. `.env` is gitignored and no key is
 ever printed, logged or written to a trace.
 
-**The demo:**
+**The demo** comes in two front ends over the same code
+([`src/wifi_doctor/demo.py`](src/wifi_doctor/demo.py)); run either from the repository root:
 
 ```bash
-python app.py               # http://127.0.0.1:7860
+streamlit run streamlit_app.py   # http://localhost:8501  (Streamlit Community Cloud)
+python app.py                    # http://127.0.0.1:7860  (Gradio, Hugging Face Spaces)
 ```
 
 One agent diagnosis takes about 25 s (median 25.4 s on the evaluation run); single-shot
@@ -311,18 +315,61 @@ with exponential backoff, honouring the provider's own `retryDelay` hint when it
 **Tests:**
 
 ```bash
-pytest -q          # 128 tests, fully offline (MockProvider, BM25-only retrieval)
-                   # 12 of them need gradio and skip without it, as CI does
+pytest -q          # 138 tests, fully offline (MockProvider, BM25-only retrieval)
+                   # 12 need gradio and 4 need streamlit; they skip without them, as CI does
 ruff check . && ruff format --check .
 ```
 
 ---
 
-## Deploying to Hugging Face Spaces
+## Deploying the demo
 
-Free accounts can no longer run a Space on CPU basic, so the demo targets a **ZeroGPU**
-Gradio Space (`zero-a10g`). The app never uses the GPU: every model call goes to the Gemini
-API, it does not import torch, and nothing is decorated with `@spaces.GPU`.
+### Streamlit Community Cloud (the live demo)
+
+Hugging Face now needs a paid plan for Gradio and Docker Spaces, so the public demo runs on
+Streamlit Community Cloud, which is free. At <https://share.streamlit.io> choose
+**Create app → Deploy a public app from GitHub** and fill in:
+
+| field | value |
+|---|---|
+| Repository | `iamgarvit/wifi-doctor` |
+| Branch | `main` |
+| Main file path | `streamlit_app.py` |
+| App URL | `wifi-doctor` (→ `wifi-doctor.streamlit.app`) |
+| Advanced settings → Python version | `3.12` |
+| Advanced settings → Secrets | see below |
+
+```toml
+GEMINI_API_KEY = "your-gemini-api-key"
+
+# Optional; these are the defaults.
+# LLM_MODEL = "gemini-3.1-flash-lite"
+# DEMO_MAX_RUNS_PER_SESSION = "5"
+# DEMO_DAILY_CAP = "50"
+# WIFI_DOCTOR_EMBEDDINGS = "0"
+```
+
+Each setting is read from `st.secrets` first, then from the environment, then from the demo
+defaults. Locally the same keys can go in `.streamlit/secrets.toml` (gitignored) or `.env`.
+
+**Why a `Pipfile`.** Community Cloud installs the first dependency file it finds, and a
+`Pipfile` takes precedence over `requirements.txt`. So [`Pipfile`](Pipfile) (with its
+`Pipfile.lock`) is the lightweight Streamlit set: `streamlit`, `google-genai`, `pydantic`,
+`python-dotenv`, `numpy` and `rank-bm25`, with no gradio, groq, torch or
+`sentence-transformers`. `requirements.txt` stays the Gradio/Hugging Face set, and
+[`.streamlit/config.toml`](.streamlit/config.toml) holds the theme and upload limit.
+
+Measured from a clean copy of the repository on Python 3.12, installed from the `Pipfile`
+alone and started from the repository root as Community Cloud does: the install took 35 s
+(491 MB), the app went from launch to rendered in a browser in 3.5 s, and the process's peak
+memory was 125 MB after two agent diagnoses, well inside Community Cloud's 690 MB minimum.
+
+### Hugging Face Space (the alternative, if a paid plan is enabled)
+
+`app.py` is the same demo in Gradio, and this README's YAML front matter is its Space card.
+The Space would run on **ZeroGPU** (`zero-a10g`) without using the GPU: every model call goes
+to the Gemini API, it does not import torch, and nothing is decorated with `@spaces.GPU`. On
+this account, creating it returned HTTP 402.
 
 ```bash
 pip install huggingface_hub
@@ -333,12 +380,15 @@ python scripts/deploy_space.py
 
 [`scripts/deploy_space.py`](scripts/deploy_space.py) creates the public Space
 `iamgarvit/wifi-doctor` if it does not exist, sets the `GEMINI_API_KEY` secret and the
-variables below, uploads every git-tracked file except `.env`, `.venv/`, `runs/` and the
-results caches, and waits until the Space reports `RUNNING`. Run it again to redeploy. If
-the Hub refuses to create the Space (HTTP 402 or 403, e.g. because the account is not
-allowed a ZeroGPU Space), the script stops without creating anything.
+settings below as Space variables, uploads every git-tracked file except `.env`, `.venv/`,
+`runs/` and the results caches, and waits until the Space reports `RUNNING`. Run it again to
+redeploy. If the Hub refuses to create the Space (HTTP 402 or 403), the script stops without
+creating anything. `.github/workflows/sync-to-hf.yml` runs the same script on every push to
+`main` when the repository has an `HF_TOKEN` secret, and skips cleanly when it does not.
 
-| Space variable | value | why |
+### Demo configuration (both hosts)
+
+| setting | value | why |
 |---|---|---|
 | `LLM_MODEL` | `gemini-3.1-flash-lite` | Gemini's free quota is per model, so the demo never spends the evaluation model's budget |
 | `DEMO_MAX_RUNS_PER_SESSION` | `5` | one visitor cannot use up the day |
@@ -346,17 +396,12 @@ allowed a ZeroGPU Space), the script stops without creating anything.
 | `WIFI_DOCTOR_EMBEDDINGS` | `0` | BM25-only retrieval (see below) |
 
 **The demo is not the evaluated configuration.** The results above are for
-`gemini-3.5-flash-lite` with hybrid retrieval; the Space runs `gemini-3.1-flash-lite` with
-BM25-only retrieval, and the footer of the demo shows both. The embedding model itself is
-cheap (on a CPU container `bge-small-en-v1.5` loaded and indexed the knowledge base in about
-14 s cold, including the download, and 7 s warm, with 20 ms queries), but it needs
+`gemini-3.5-flash-lite` with hybrid retrieval; the demo runs `gemini-3.1-flash-lite` with
+BM25-only retrieval, and its footer shows both. The embedding model itself is cheap (on a
+CPU container `bge-small-en-v1.5` loaded and indexed the knowledge base in about 14 s cold,
+including the download, and 7 s warm, with 20 ms queries), but it needs
 `sentence-transformers` and torch, which took 5.8 GB of disk to install. That is too much
-to add for a 28-document knowledge base, so the Space leaves it out.
-
-`.github/workflows/sync-to-hf.yml` runs the same script on every push to `main` when the
-repository has an `HF_TOKEN` secret, and skips cleanly when it does not. It leaves the Space's
-`GEMINI_API_KEY` secret untouched. The YAML front matter at the top of this README is the
-Space's configuration card.
+to add for a 28-document knowledge base, so the demo leaves it out.
 
 ---
 
@@ -376,14 +421,17 @@ src/wifi_doctor/
   ratelimit.py   RPM sliding window + persisted RPD counter
   baseline.py    the regex rules the agent has to beat
   config.py      settings from .env; never prints a key
+  demo.py        the demo's limits, run logic and renderers, shared by both front ends
 
 kb/              28 markdown docs: 802.11 code tables, state machine, per-class notes
 data/synthetic/  dev (44) and test (66) cases with ground-truth evidence line numbers
 scripts/         log generator; README results injector; Space deploy
 eval/            metrics + the evaluation CLI
-tests/           128 offline tests
+tests/           138 offline tests
 docs/            sample traces, demo screenshot
-app.py           the Gradio demo
+streamlit_app.py the Streamlit demo (Streamlit Community Cloud)
+app.py           the Gradio demo (Hugging Face Spaces)
+Pipfile          the Streamlit demo's dependencies; requirements.txt is the Gradio set
 ```
 
 A trace is one JSONL file per run — `run_start`, then `llm_call` / `tool_call` /

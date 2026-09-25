@@ -1,0 +1,19 @@
+# Dependencies for the Streamlit Community Cloud demo (streamlit_app.py).
+#
+# Community Cloud installs the first dependency file it finds, and a Pipfile
+# takes precedence over requirements.txt. requirements.txt stays the Gradio /
+# Hugging Face Space set; this is the lightweight Streamlit set: no gradio, no
+# groq, no torch, no sentence-transformers (retrieval runs BM25-only).
+
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+streamlit = "==1.64.0"
+google-genai = "==2.25.0"
+pydantic = "==2.13.5"
+python-dotenv = "==1.2.3"
+numpy = "==2.3.4"
+rank-bm25 = "==0.2.2"

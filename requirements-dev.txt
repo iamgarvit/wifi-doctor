@@ -2,6 +2,8 @@
 # Local embeddings for hybrid retrieval. Optional at runtime: retrieval.py
 # degrades to BM25-only if this import or the model download fails.
 sentence-transformers==5.1.2
+# The Streamlit demo (its deploy dependencies are in Pipfile).
+streamlit==1.64.0
 pytest==8.4.2
 ruff==0.14.0
 matplotlib==3.11.2

@@ -88,7 +88,7 @@ def test_provider_quota_gives_a_friendly_message(dev_cases, monkeypatch):
         raise RateLimitError("429 GenerateRequestsPerDayPerProjectPerModel-FreeTier")
 
     monkeypatch.setattr(demo, "get_settings", lambda *a, **k: _WithKey())
-    monkeypatch.setattr(demo, "diagnose", exhausted)
+    monkeypatch.setattr(demo.core, "diagnose", exhausted)
     monkeypatch.setitem(demo._daily, "date", "")
     card, _, _, redaction, runs = demo.run_diagnosis(
         dev_cases[0]["log"], None, "agent (tools + RAG)", 0
