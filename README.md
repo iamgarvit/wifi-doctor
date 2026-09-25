@@ -1,17 +1,3 @@
----
-title: wifi-doctor
-emoji: 📶
-colorFrom: indigo
-colorTo: gray
-sdk: gradio
-sdk_version: 6.28.0
-app_file: app.py
-python_version: "3.12"
-pinned: false
-license: mit
-short_description: LLM agent that diagnoses Wi-Fi failures from supplicant logs
----
-
 # wifi-doctor
 
 **An LLM agent that reads a `wpa_supplicant` log and tells you why the Wi-Fi failed — and
@@ -315,7 +301,7 @@ with exponential backoff, honouring the provider's own `retryDelay` hint when it
 **Tests:**
 
 ```bash
-pytest -q          # 138 tests, fully offline (MockProvider, BM25-only retrieval)
+pytest -q          # 144 tests, fully offline (MockProvider, BM25-only retrieval)
                    # 12 need gradio and 4 need streamlit; they skip without them, as CI does
 ruff check . && ruff format --check .
 ```
@@ -366,12 +352,15 @@ memory was 125 MB after two agent diagnoses, well inside Community Cloud's 690 M
 
 ### Hugging Face Space (the alternative, if a paid plan is enabled)
 
-`app.py` is the same demo in Gradio, and this README's YAML front matter is its Space card.
-The Space would run on **ZeroGPU** (`zero-a10g`) without using the GPU: every model call goes
+`app.py` is the same demo in Gradio. Its Space configuration (SDK, Gradio version, Python
+version, app file) is the YAML front matter of [`hf_space_card.md`](hf_space_card.md), which the
+deploy script uploads as the Space's `README.md`. The Space would run on **ZeroGPU** (`zero-a10g`) without using the GPU: every model call goes
 to the Gemini API, it does not import torch, and nothing is decorated with `@spaces.GPU`. On
 this account, creating it returned HTTP 402.
 
 ```bash
+python scripts/deploy_space.py --dry-run   # the upload plan; no token, no Hub calls
+
 pip install huggingface_hub
 export HF_TOKEN=...          # a Hugging Face token with write access
 export GEMINI_API_KEY=...    # stored as a Space secret, never printed
@@ -381,10 +370,12 @@ python scripts/deploy_space.py
 [`scripts/deploy_space.py`](scripts/deploy_space.py) creates the public Space
 `iamgarvit/wifi-doctor` if it does not exist, sets the `GEMINI_API_KEY` secret and the
 settings below as Space variables, uploads every git-tracked file except `.env`, `.venv/`,
-`runs/` and the results caches, and waits until the Space reports `RUNNING`. Run it again to
+`runs/` and the results caches (with the card in place of this README), deletes files that
+are no longer part of the upload, and waits until the Space reports `RUNNING`. Run it again to
 redeploy. If the Hub refuses to create the Space (HTTP 402 or 403), the script stops without
-creating anything. `.github/workflows/sync-to-hf.yml` runs the same script on every push to
-`main` when the repository has an `HF_TOKEN` secret, and skips cleanly when it does not.
+creating anything. `.github/workflows/sync-to-hf.yml` runs the same script, but only when
+started by hand from the Actions tab, and skips cleanly when the repository has no `HF_TOKEN`
+secret.
 
 ### Demo configuration (both hosts)
 
@@ -427,11 +418,12 @@ kb/              28 markdown docs: 802.11 code tables, state machine, per-class 
 data/synthetic/  dev (44) and test (66) cases with ground-truth evidence line numbers
 scripts/         log generator; README results injector; Space deploy
 eval/            metrics + the evaluation CLI
-tests/           138 offline tests
+tests/           144 offline tests
 docs/            sample traces, demo screenshot
 streamlit_app.py the Streamlit demo (Streamlit Community Cloud)
 app.py           the Gradio demo (Hugging Face Spaces)
 Pipfile          the Streamlit demo's dependencies; requirements.txt is the Gradio set
+hf_space_card.md the Hugging Face Space's README and configuration
 ```
 
 A trace is one JSONL file per run — `run_start`, then `llm_call` / `tool_call` /
