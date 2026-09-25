@@ -1,0 +1,35 @@
+{
+  "case_id": "test_0056",
+  "mode": "baseline",
+  "truth": "HANDSHAKE_TIMEOUT",
+  "predicted": "HANDSHAKE_TIMEOUT",
+  "truth_lines": [
+    25,
+    26,
+    27,
+    28,
+    31,
+    32
+  ],
+  "cited_lines": [
+    26,
+    27,
+    28,
+    31
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 4,
+  "confidence": 0.8,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 0,
+  "api_requests": 0,
+  "total_tokens": 0,
+  "wall_ms": 0.3765830770134926,
+  "llm_latency_ms": 0.0,
+  "variant": "heavy_noise",
+  "trace_path": null,
+  "error": null
+}

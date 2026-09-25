@@ -1,0 +1,30 @@
+{
+  "case_id": "test_0046",
+  "mode": "single_shot",
+  "truth": "AUTH_TIMEOUT",
+  "predicted": "AUTH_TIMEOUT",
+  "truth_lines": [
+    17,
+    18,
+    19
+  ],
+  "cited_lines": [
+    18,
+    19
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 2,
+  "confidence": 0.95,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 1,
+  "api_requests": 1,
+  "total_tokens": 8561,
+  "wall_ms": 2092.2,
+  "llm_latency_ms": 2091.1,
+  "variant": "misleading",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/single_shot/test_0046.jsonl",
+  "error": null
+}

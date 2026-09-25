@@ -1,0 +1,31 @@
+{
+  "case_id": "test_0025",
+  "mode": "baseline",
+  "truth": "ASSOC_REJECTED",
+  "predicted": "ASSOC_REJECTED",
+  "truth_lines": [
+    34,
+    35,
+    39
+  ],
+  "cited_lines": [
+    9,
+    35,
+    39
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 3,
+  "confidence": 0.7,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 0,
+  "api_requests": 0,
+  "total_tokens": 0,
+  "wall_ms": 0.7697499822825193,
+  "llm_latency_ms": 0.0,
+  "variant": "transient_recovery",
+  "trace_path": null,
+  "error": null
+}

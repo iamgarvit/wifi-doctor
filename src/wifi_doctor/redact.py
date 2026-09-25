@@ -29,6 +29,11 @@ IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 # SSIDs only ever appear quoted in supplicant output; anything else would be a
 # guess, and guessing here means either leaking or mangling the log.
 SSID_RE = re.compile(r"(?i)\b(ssid=)(['\"])(.*?)\2")
+# EAP certificate subjects name the organisation's RADIUS server and often
+# embed the network name. A test on the real corpus caught this leaking through
+# CTRL-EVENT-EAP-PEER-CERT, which no other pattern covers.
+CERT_SUBJECT_RE = re.compile(r"(?i)\b((?:subject|issuer|altsubject)=)(['\"])(.*?)\2")
+CERT_CN_RE = re.compile(r"(?i)(/(?:CN|O|OU|DC)=)([A-Za-z0-9.*_\-]+)")
 IDENTITY_RE = re.compile(
     r"(?i)((?:EAP:\s*Identity response:|identity=|anonymous_identity=|user=|(?:of|for)\s+user)\s*['\"]?)"
     r"([A-Za-z0-9._%+\-]+(?:@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})?)"
@@ -37,7 +42,7 @@ EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b")
 # `Mon DD HH:MM:SS <host> proc[pid]:` -- the third syslog field is the device name.
 SYSLOG_HOST_RE = re.compile(r"^([A-Z][a-z]{2} [ \d]\d \d{2}:\d{2}:\d{2} )([^\s]+)(\s)")
 
-PLACEHOLDER_RE = re.compile(r"<(MAC|SSID|IPV4|IPV6|IDENTITY|HOST)_(\d+)>")
+PLACEHOLDER_RE = re.compile(r"<(MAC|SSID|IPV4|IPV6|IDENTITY|HOST|CERT)_(\d+)>")
 
 # Addresses that are protocol constants, not anybody's address. Redacting these
 # would destroy meaning (a DHCPDISCOVER *must* go to 255.255.255.255) and
@@ -100,6 +105,15 @@ class Redactor:
             ),
             text,
         )
+        text = CERT_SUBJECT_RE.sub(
+            lambda m: (
+                m.group(1) + m.group(2) + self._placeholder("CERT", m.group(3)) + m.group(2)
+                if m.group(3)
+                else m.group(0)
+            ),
+            text,
+        )
+        text = CERT_CN_RE.sub(lambda m: m.group(1) + self._placeholder("CERT", m.group(2)), text)
         text = IDENTITY_RE.sub(
             lambda m: m.group(1) + self._placeholder("IDENTITY", m.group(2)), text
         )

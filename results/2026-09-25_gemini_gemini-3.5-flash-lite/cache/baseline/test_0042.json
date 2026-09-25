@@ -1,0 +1,31 @@
+{
+  "case_id": "test_0042",
+  "mode": "baseline",
+  "truth": "NETWORK_NOT_FOUND",
+  "predicted": "NETWORK_NOT_FOUND",
+  "truth_lines": [
+    8,
+    14,
+    24
+  ],
+  "cited_lines": [
+    8,
+    14,
+    24
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 3,
+  "confidence": 0.85,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 0,
+  "api_requests": 0,
+  "total_tokens": 0,
+  "wall_ms": 0.15470897778868675,
+  "llm_latency_ms": 0.0,
+  "variant": "truncated",
+  "trace_path": null,
+  "error": null
+}

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    env:
+      # No API key, no network: the suite runs entirely against MockProvider,
+      # and retrieval stays on the BM25 path so no embedding model is fetched.
+      WIFI_DOCTOR_EMBEDDINGS: "0"
+      LLM_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          # Runtime deps are not needed for the offline suite; install only what
+          # the tests import, so CI stays fast and does not pull in torch.
+          pip install pydantic python-dotenv numpy rank-bm25 pytest ruff
+          pip install -e . --no-deps
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Regenerate the dataset and check it is reproducible
+        run: |
+          python scripts/generate_logs.py
+          git diff --exit-code -- data/synthetic
+
+      - name: Test
+        run: pytest -q

@@ -1,0 +1,25 @@
+{
+  "case_id": "test_0004",
+  "mode": "baseline",
+  "truth": "AP_DEAUTH",
+  "predicted": "HEALTHY",
+  "truth_lines": [
+    44
+  ],
+  "cited_lines": [],
+  "unverifiable_citations": 0,
+  "n_citations": 0,
+  "confidence": 0.75,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 0,
+  "api_requests": 0,
+  "total_tokens": 0,
+  "wall_ms": 1.6726250760257244,
+  "llm_latency_ms": 0.0,
+  "variant": "plain",
+  "trace_path": null,
+  "error": null
+}

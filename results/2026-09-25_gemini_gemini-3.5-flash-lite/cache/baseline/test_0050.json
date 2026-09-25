@@ -1,0 +1,33 @@
+{
+  "case_id": "test_0050",
+  "mode": "baseline",
+  "truth": "DHCP_TIMEOUT",
+  "predicted": "DHCP_TIMEOUT",
+  "truth_lines": [
+    30,
+    31,
+    33,
+    35,
+    36,
+    37
+  ],
+  "cited_lines": [
+    36,
+    37
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 2,
+  "confidence": 0.85,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 0,
+  "api_requests": 0,
+  "total_tokens": 0,
+  "wall_ms": 0.7443339563906193,
+  "llm_latency_ms": 0.0,
+  "variant": "plain",
+  "trace_path": null,
+  "error": null
+}

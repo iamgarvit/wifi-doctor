@@ -1,0 +1,28 @@
+{
+  "case_id": "test_0037",
+  "mode": "baseline",
+  "truth": "AP_DEAUTH",
+  "predicted": "AP_DEAUTH",
+  "truth_lines": [
+    62,
+    63
+  ],
+  "cited_lines": [
+    62
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 1,
+  "confidence": 0.6,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 0,
+  "api_requests": 0,
+  "total_tokens": 0,
+  "wall_ms": 0.6002909503877163,
+  "llm_latency_ms": 0.0,
+  "variant": "heavy_noise",
+  "trace_path": null,
+  "error": null
+}

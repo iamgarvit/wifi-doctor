@@ -1,0 +1,30 @@
+{
+  "case_id": "test_0029",
+  "mode": "baseline",
+  "truth": "BEACON_LOSS_WEAK_SIGNAL",
+  "predicted": "ASSOC_REJECTED",
+  "truth_lines": [
+    61,
+    62,
+    63,
+    64
+  ],
+  "cited_lines": [
+    8
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 1,
+  "confidence": 0.7,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 0,
+  "api_requests": 0,
+  "total_tokens": 0,
+  "wall_ms": 0.4441251512616873,
+  "llm_latency_ms": 0.0,
+  "variant": "transient_recovery",
+  "trace_path": null,
+  "error": null
+}

@@ -1,0 +1,33 @@
+{
+  "case_id": "test_0000",
+  "mode": "baseline",
+  "truth": "WRONG_PASSWORD",
+  "predicted": "WRONG_PASSWORD",
+  "truth_lines": [
+    26,
+    53,
+    82,
+    108
+  ],
+  "cited_lines": [
+    24,
+    26,
+    51,
+    53
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 4,
+  "confidence": 0.9,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 0,
+  "api_requests": 0,
+  "total_tokens": 0,
+  "wall_ms": 0.4155421629548073,
+  "llm_latency_ms": 0.0,
+  "variant": "plain",
+  "trace_path": null,
+  "error": null
+}

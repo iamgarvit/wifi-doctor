@@ -1,0 +1,31 @@
+{
+  "case_id": "test_0008",
+  "mode": "single_shot",
+  "truth": "ROAMING_FAILURE",
+  "predicted": "HEALTHY",
+  "truth_lines": [
+    43,
+    44,
+    46,
+    47
+  ],
+  "cited_lines": [
+    25,
+    32
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 2,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 1,
+  "api_requests": 1,
+  "total_tokens": 10784,
+  "wall_ms": 1829.6,
+  "llm_latency_ms": 1827.1,
+  "variant": "plain",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/single_shot/test_0008.jsonl",
+  "error": null
+}
