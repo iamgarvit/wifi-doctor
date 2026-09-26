@@ -52,7 +52,7 @@ On failure the specific errors, including the real text of a misquoted line, go 
 for exactly one retry. If it fails twice, the run returns `needs_more_info=true` rather than a
 confident guess.
 
-On the reported run the guardrail fired on 2 of 33 agent cases (schema-valid first try 93.9%,
+On the reported run the guardrail fired on 4 of 66 agent cases (schema-valid first try 93.9%,
 100% after retry). In
 [`sample_traces/agent_test_0006_validation_retry.jsonl`](sample_traces/agent_test_0006_validation_retry.jsonl)
 the model cited a NetworkManager line with the right process name, log format and a plausible
@@ -105,6 +105,8 @@ calls.
   it was right and 1.00 when it was wrong. Making it meaningful (verbalised uncertainty,
   self-consistency across samples, or a calibrated head over the evidence count) is the most
   valuable next piece of work, and the evaluation harness already measures it.
-- **One model, one day.** Everything was measured on a single provider and model on the date
-  recorded, with temperature 0. No repeated-run variance is reported.
+- **Small test set.** 66 logs, 6 per class: one case moves accuracy by 1.5 points, so small gaps
+  between modes are not meaningful.
+- **One model, one run.** Everything was measured on a single provider and model, with
+  temperature 0. No repeated-run variance is reported.
 - **Token cost grows with the conversation.** See [`EVALUATION.md`](EVALUATION.md#cost).

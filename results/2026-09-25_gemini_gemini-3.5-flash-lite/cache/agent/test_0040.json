@@ -1,0 +1,32 @@
+{
+  "case_id": "test_0040",
+  "mode": "agent",
+  "truth": "BEACON_LOSS_WEAK_SIGNAL",
+  "predicted": "BEACON_LOSS_WEAK_SIGNAL",
+  "truth_lines": [
+    48,
+    50,
+    51,
+    52
+  ],
+  "cited_lines": [
+    51,
+    48,
+    53
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 3,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 6,
+  "api_requests": 6,
+  "total_tokens": 34178,
+  "wall_ms": 4954.7,
+  "llm_latency_ms": 4831.1,
+  "variant": "heavy_noise",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/agent/test_0040.jsonl",
+  "error": null
+}

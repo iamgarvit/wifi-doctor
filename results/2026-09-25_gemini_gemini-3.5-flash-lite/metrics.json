@@ -1,11 +1,11 @@
 {
   "meta": {
-    "date": "2026-09-25",
-    "generated_at": "2026-09-25T15:31:14+00:00",
+    "date": "2026-09-26",
+    "generated_at": "2026-09-26T11:42:02+00:00",
     "split": "test",
     "provider": "gemini",
     "model": "gemini-3.5-flash-lite",
-    "n_cases": 33,
+    "n_cases": 66,
     "cases_path": "data/synthetic/test/cases.jsonl",
     "kb_backend": "hybrid",
     "kb_embed_model": "BAAI/bge-small-en-v1.5",
@@ -15,80 +15,80 @@
       "single_shot",
       "agent"
     ],
-    "total_api_requests": 245,
-    "command": "python eval/run_eval.py --split test --modes baseline single_shot agent --provider gemini --model gemini-3.5-flash-lite --limit 33"
+    "total_api_requests": 492,
+    "command": "python eval/run_eval.py --split test --modes baseline single_shot agent --provider gemini --model gemini-3.5-flash-lite --out results/2026-09-25_gemini_gemini-3.5-flash-lite"
   },
   "modes": {
     "baseline": {
-      "n_cases": 33,
-      "accuracy": 0.7575757575757576,
-      "macro_f1": 0.6969696969696969,
+      "n_cases": 66,
+      "accuracy": 0.8333333333333334,
+      "macro_f1": 0.8196807648679307,
       "per_class": {
         "WRONG_PASSWORD": {
-          "support": 3,
-          "precision": 0.5,
+          "support": 6,
+          "precision": 0.6,
           "recall": 1.0,
-          "f1": 0.6666666666666666
+          "f1": 0.7499999999999999
         },
         "HANDSHAKE_TIMEOUT": {
-          "support": 3,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0
+          "support": 6,
+          "precision": 1.0,
+          "recall": 0.3333333333333333,
+          "f1": 0.5
         },
         "AUTH_TIMEOUT": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "ASSOC_REJECTED": {
-          "support": 3,
-          "precision": 0.5,
+          "support": 6,
+          "precision": 0.5454545454545454,
           "recall": 1.0,
-          "f1": 0.6666666666666666
+          "f1": 0.7058823529411764
         },
         "AP_DEAUTH": {
-          "support": 3,
-          "precision": 0.0,
-          "recall": 0.0,
-          "f1": 0.0
+          "support": 6,
+          "precision": 1.0,
+          "recall": 0.3333333333333333,
+          "f1": 0.5
         },
         "EAP_FAILURE": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "DHCP_TIMEOUT": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "BEACON_LOSS_WEAK_SIGNAL": {
-          "support": 3,
-          "precision": 0.6666666666666666,
+          "support": 6,
+          "precision": 0.8,
           "recall": 0.6666666666666666,
-          "f1": 0.6666666666666666
+          "f1": 0.7272727272727272
         },
         "ROAMING_FAILURE": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "NETWORK_NOT_FOUND": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "HEALTHY": {
-          "support": 3,
-          "precision": 0.6666666666666666,
-          "recall": 0.6666666666666666,
-          "f1": 0.6666666666666666
+          "support": 6,
+          "precision": 0.8333333333333334,
+          "recall": 0.8333333333333334,
+          "f1": 0.8333333333333334
         }
       },
       "confusion": {
@@ -107,7 +107,7 @@
         ],
         "matrix": [
           [
-            3,
+            6,
             0,
             0,
             0,
@@ -120,50 +120,50 @@
             0
           ],
           [
-            3,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            3,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            3,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
+            4,
             2,
             0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            6,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            6,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            3,
+            2,
             0,
             0,
             0,
@@ -177,7 +177,7 @@
             0,
             0,
             0,
-            3,
+            6,
             0,
             0,
             0,
@@ -191,23 +191,23 @@
             0,
             0,
             0,
-            3,
+            6,
             0,
             0,
             0,
             0
           ],
           [
-            0,
-            0,
-            0,
-            1,
             0,
             0,
             0,
             2,
             0,
             0,
+            0,
+            4,
+            0,
+            0,
             0
           ],
           [
@@ -219,7 +219,7 @@
             0,
             0,
             0,
-            3,
+            6,
             0,
             0
           ],
@@ -233,7 +233,7 @@
             0,
             0,
             0,
-            3,
+            6,
             0
           ],
           [
@@ -247,23 +247,23 @@
             1,
             0,
             0,
-            2
+            5
           ]
         ]
       },
       "evidence": {
-        "n_cases_scored": 30,
-        "precision": 0.828125,
-        "recall": 0.4491525423728814,
-        "mean_citations_per_case": 2.1333333333333333,
+        "n_cases_scored": 60,
+        "precision": 0.8814814814814815,
+        "recall": 0.5,
+        "mean_citations_per_case": 2.25,
         "hallucinated_rate_final": 0.0,
         "cases_with_pre_validation_evidence_error": 0.0
       },
       "healthy": {
-        "n_healthy": 3,
-        "false_alarm_rate": 0.3333333333333333,
-        "n_faulty": 30,
-        "missed_failure_rate": 0.03333333333333333
+        "n_healthy": 6,
+        "false_alarm_rate": 0.16666666666666666,
+        "n_faulty": 60,
+        "missed_failure_rate": 0.016666666666666666
       },
       "schema": {
         "valid_first_try": 1.0,
@@ -273,109 +273,109 @@
         "mean_api_requests": 0.0,
         "mean_total_tokens": 0.0,
         "mean_steps": 0.0,
-        "mean_wall_ms": 0.7425367154858329,
-        "median_wall_ms": 0.6779590621590614,
+        "mean_wall_ms": 0.6877305056674011,
+        "median_wall_ms": 0.538625055924058,
         "mean_llm_latency_ms": 0.0,
         "total_api_requests": 0,
         "total_tokens": 0
       },
       "by_variant": {
         "heavy_noise": {
-          "n": 1,
+          "n": 8,
           "accuracy": 1.0
         },
         "misleading": {
-          "n": 10,
-          "accuracy": 0.7
+          "n": 20,
+          "accuracy": 0.8
         },
         "plain": {
-          "n": 12,
-          "accuracy": 0.8333333333333334
+          "n": 15,
+          "accuracy": 0.8666666666666667
         },
         "transient_recovery": {
-          "n": 5,
-          "accuracy": 0.4
+          "n": 12,
+          "accuracy": 0.6666666666666666
         },
         "truncated": {
-          "n": 5,
-          "accuracy": 1.0
+          "n": 11,
+          "accuracy": 0.9090909090909091
         }
       },
-      "mean_confidence_correct": 0.7879999999999999,
-      "mean_confidence_wrong": 0.78125,
+      "mean_confidence_correct": 0.7809090909090911,
+      "mean_confidence_wrong": 0.7772727272727273,
       "needs_more_info_rate": 0.0,
       "errors": []
     },
     "single_shot": {
-      "n_cases": 33,
-      "accuracy": 0.8484848484848485,
-      "macro_f1": 0.8173160173160173,
+      "n_cases": 66,
+      "accuracy": 0.8181818181818182,
+      "macro_f1": 0.7924560288196651,
       "per_class": {
         "WRONG_PASSWORD": {
-          "support": 3,
-          "precision": 0.75,
+          "support": 6,
+          "precision": 0.8571428571428571,
           "recall": 1.0,
-          "f1": 0.8571428571428571
+          "f1": 0.923076923076923
         },
         "HANDSHAKE_TIMEOUT": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "AUTH_TIMEOUT": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "ASSOC_REJECTED": {
-          "support": 3,
+          "support": 6,
           "precision": 0.6666666666666666,
           "recall": 0.6666666666666666,
           "f1": 0.6666666666666666
         },
         "AP_DEAUTH": {
-          "support": 3,
-          "precision": 1.0,
+          "support": 6,
+          "precision": 0.8,
           "recall": 0.6666666666666666,
-          "f1": 0.8
+          "f1": 0.7272727272727272
         },
         "EAP_FAILURE": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "DHCP_TIMEOUT": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "BEACON_LOSS_WEAK_SIGNAL": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "ROAMING_FAILURE": {
-          "support": 3,
+          "support": 6,
           "precision": 0.0,
           "recall": 0.0,
           "f1": 0.0
         },
         "NETWORK_NOT_FOUND": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0
+          "recall": 0.6666666666666666,
+          "f1": 0.8
         },
         "HEALTHY": {
-          "support": 3,
-          "precision": 0.5,
+          "support": 6,
+          "precision": 0.42857142857142855,
           "recall": 1.0,
-          "f1": 0.6666666666666666
+          "f1": 0.6
         }
       },
       "confusion": {
@@ -394,7 +394,7 @@
         ],
         "matrix": [
           [
-            3,
+            6,
             0,
             0,
             0,
@@ -408,7 +408,7 @@
           ],
           [
             0,
-            3,
+            6,
             0,
             0,
             0,
@@ -422,7 +422,7 @@
           [
             0,
             0,
-            3,
+            6,
             0,
             0,
             0,
@@ -436,73 +436,21 @@
             1,
             0,
             0,
-            2,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            2,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            0,
-            3,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            3,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            3,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
+            4,
             1,
             0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            4,
             0,
             0,
             0,
@@ -516,12 +464,64 @@
             0,
             0,
             0,
+            6,
             0,
             0,
             0,
             0,
-            3,
             0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            6,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            6,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            4
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            4,
+            2
           ],
           [
             0,
@@ -534,135 +534,135 @@
             0,
             0,
             0,
-            3
+            6
           ]
         ]
       },
       "evidence": {
-        "n_cases_scored": 30,
-        "precision": 0.6206896551724138,
-        "recall": 0.4576271186440678,
-        "mean_citations_per_case": 2.9,
+        "n_cases_scored": 60,
+        "precision": 0.6272189349112426,
+        "recall": 0.44537815126050423,
+        "mean_citations_per_case": 2.816666666666667,
         "hallucinated_rate_final": 0.0,
-        "cases_with_pre_validation_evidence_error": 0.0
+        "cases_with_pre_validation_evidence_error": 0.015151515151515152
       },
       "healthy": {
-        "n_healthy": 3,
+        "n_healthy": 6,
         "false_alarm_rate": 0.0,
-        "n_faulty": 30,
-        "missed_failure_rate": 0.1
+        "n_faulty": 60,
+        "missed_failure_rate": 0.13333333333333333
       },
       "schema": {
-        "valid_first_try": 1.0,
+        "valid_first_try": 0.9848484848484849,
         "valid_after_retry": 1.0
       },
       "cost": {
-        "mean_api_requests": 1.0,
-        "mean_total_tokens": 11010.727272727272,
-        "mean_steps": 1.0,
-        "mean_wall_ms": 3871.1848484848488,
-        "median_wall_ms": 2444.8,
-        "mean_llm_latency_ms": 2384.754545454545,
-        "total_api_requests": 33,
-        "total_tokens": 363354
+        "mean_api_requests": 1.0151515151515151,
+        "mean_total_tokens": 10371.545454545454,
+        "mean_steps": 1.0151515151515151,
+        "mean_wall_ms": 4043.7045454545464,
+        "median_wall_ms": 2448.0,
+        "mean_llm_latency_ms": 2893.534848484848,
+        "total_api_requests": 67,
+        "total_tokens": 684522
       },
       "by_variant": {
         "heavy_noise": {
-          "n": 1,
+          "n": 8,
           "accuracy": 1.0
         },
         "misleading": {
-          "n": 10,
+          "n": 20,
           "accuracy": 0.8
         },
         "plain": {
-          "n": 12,
-          "accuracy": 0.9166666666666666
+          "n": 15,
+          "accuracy": 0.9333333333333333
         },
         "transient_recovery": {
-          "n": 5,
-          "accuracy": 0.8
+          "n": 12,
+          "accuracy": 0.5
         },
         "truncated": {
-          "n": 5,
-          "accuracy": 0.8
+          "n": 11,
+          "accuracy": 0.9090909090909091
         }
       },
-      "mean_confidence_correct": 0.9857142857142858,
-      "mean_confidence_wrong": 0.9400000000000001,
+      "mean_confidence_correct": 0.9870370370370372,
+      "mean_confidence_wrong": 0.9500000000000001,
       "needs_more_info_rate": 0.0,
       "errors": []
     },
     "agent": {
-      "n_cases": 33,
-      "accuracy": 0.9393939393939394,
-      "macro_f1": 0.9376623376623378,
+      "n_cases": 66,
+      "accuracy": 0.9090909090909091,
+      "macro_f1": 0.912258953168044,
       "per_class": {
         "WRONG_PASSWORD": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "HANDSHAKE_TIMEOUT": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "AUTH_TIMEOUT": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
-          "recall": 0.6666666666666666,
-          "f1": 0.8
+          "recall": 0.8333333333333334,
+          "f1": 0.9090909090909091
         },
         "ASSOC_REJECTED": {
-          "support": 3,
-          "precision": 0.75,
-          "recall": 1.0,
-          "f1": 0.8571428571428571
+          "support": 6,
+          "precision": 0.8333333333333334,
+          "recall": 0.8333333333333334,
+          "f1": 0.8333333333333334
         },
         "AP_DEAUTH": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "EAP_FAILURE": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "DHCP_TIMEOUT": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 0.6666666666666666,
           "f1": 0.8
         },
         "BEACON_LOSS_WEAK_SIGNAL": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
           "recall": 1.0,
           "f1": 1.0
         },
         "ROAMING_FAILURE": {
-          "support": 3,
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0
+          "support": 6,
+          "precision": 0.8333333333333334,
+          "recall": 0.8333333333333334,
+          "f1": 0.8333333333333334
         },
         "NETWORK_NOT_FOUND": {
-          "support": 3,
+          "support": 6,
           "precision": 1.0,
-          "recall": 1.0,
-          "f1": 1.0
+          "recall": 0.8333333333333334,
+          "f1": 0.9090909090909091
         },
         "HEALTHY": {
-          "support": 3,
-          "precision": 0.75,
+          "support": 6,
+          "precision": 0.6,
           "recall": 1.0,
-          "f1": 0.8571428571428571
+          "f1": 0.7499999999999999
         }
       },
       "confusion": {
@@ -681,7 +681,7 @@
         ],
         "matrix": [
           [
-            3,
+            6,
             0,
             0,
             0,
@@ -695,7 +695,7 @@
           ],
           [
             0,
-            3,
+            6,
             0,
             0,
             0,
@@ -709,7 +709,7 @@
           [
             0,
             0,
-            2,
+            5,
             1,
             0,
             0,
@@ -723,8 +723,21 @@
             0,
             0,
             0,
-            3,
+            5,
             0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            6,
             0,
             0,
             0,
@@ -737,21 +750,8 @@
             0,
             0,
             0,
-            3,
             0,
-            0,
-            0,
-            0,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            0,
-            3,
+            6,
             0,
             0,
             0,
@@ -765,9 +765,35 @@
             0,
             0,
             0,
-            2,
+            4,
             0,
             0,
+            0,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            6,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            5,
             0,
             1
           ],
@@ -779,36 +805,10 @@
             0,
             0,
             0,
-            3,
             0,
             0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            3,
-            0,
-            0
-          ],
-          [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            3,
-            0
+            5,
+            1
           ],
           [
             0,
@@ -821,61 +821,61 @@
             0,
             0,
             0,
-            3
+            6
           ]
         ]
       },
       "evidence": {
-        "n_cases_scored": 30,
-        "precision": 0.6823529411764706,
-        "recall": 0.4915254237288136,
-        "mean_citations_per_case": 2.8333333333333335,
+        "n_cases_scored": 60,
+        "precision": 0.655367231638418,
+        "recall": 0.48739495798319327,
+        "mean_citations_per_case": 2.95,
         "hallucinated_rate_final": 0.0,
         "cases_with_pre_validation_evidence_error": 0.06060606060606061
       },
       "healthy": {
-        "n_healthy": 3,
+        "n_healthy": 6,
         "false_alarm_rate": 0.0,
-        "n_faulty": 30,
-        "missed_failure_rate": 0.03333333333333333
+        "n_faulty": 60,
+        "missed_failure_rate": 0.06666666666666667
       },
       "schema": {
         "valid_first_try": 0.9393939393939394,
         "valid_after_retry": 1.0
       },
       "cost": {
-        "mean_api_requests": 6.424242424242424,
-        "mean_total_tokens": 44040.78787878788,
-        "mean_steps": 6.424242424242424,
-        "mean_wall_ms": 31576.663636363635,
-        "median_wall_ms": 25380.1,
-        "mean_llm_latency_ms": 18277.49696969697,
-        "total_api_requests": 212,
-        "total_tokens": 1453346
+        "mean_api_requests": 6.4393939393939394,
+        "mean_total_tokens": 42594.84848484849,
+        "mean_steps": 6.4393939393939394,
+        "mean_wall_ms": 29654.40909090909,
+        "median_wall_ms": 24961.8,
+        "mean_llm_latency_ms": 15523.730303030301,
+        "total_api_requests": 425,
+        "total_tokens": 2811260
       },
       "by_variant": {
         "heavy_noise": {
-          "n": 1,
-          "accuracy": 1.0
+          "n": 8,
+          "accuracy": 0.875
         },
         "misleading": {
-          "n": 10,
+          "n": 20,
           "accuracy": 0.9
         },
         "plain": {
-          "n": 12,
+          "n": 15,
           "accuracy": 1.0
         },
         "transient_recovery": {
-          "n": 5,
-          "accuracy": 0.8
+          "n": 12,
+          "accuracy": 0.75
         },
         "truncated": {
-          "n": 5,
+          "n": 11,
           "accuracy": 1.0
         }
       },
-      "mean_confidence_correct": 0.9983870967741936,
+      "mean_confidence_correct": 0.9975,
       "mean_confidence_wrong": 1.0,
       "needs_more_info_rate": 0.0,
       "errors": []

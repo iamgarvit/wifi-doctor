@@ -1,0 +1,33 @@
+{
+  "case_id": "test_0060",
+  "mode": "agent",
+  "truth": "EAP_FAILURE",
+  "predicted": "EAP_FAILURE",
+  "truth_lines": [
+    33,
+    34,
+    36
+  ],
+  "cited_lines": [
+    28,
+    30,
+    33,
+    35,
+    36
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 5,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 5,
+  "api_requests": 5,
+  "total_tokens": 15174,
+  "wall_ms": 16254.8,
+  "llm_latency_ms": 16225.2,
+  "variant": "misleading",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/agent/test_0060.jsonl",
+  "error": null
+}
