@@ -62,3 +62,54 @@ def test_agent_run_on_the_mock_provider_counts_one_session_run(dev_cases, monkey
 def test_empty_log_is_refused_without_a_run():
     out = core.run("  \n ", "agent (tools + RAG)", 0, get_settings("mock"))
     assert out.message and "Paste a log" in out.message and not out.used_run
+
+
+# Deliberately fake credentials for the no-key-leak tests. They are assembled at runtime so no
+# literal in the source has a real key's shape (secret scanners match literals), while the values
+# keep realistic formats: FAKE_KEY is 39 characters, like a Google API key.
+FAKE_KEY = "AIza" + "Sy" + "FAKE" + "x" * 29
+FAKE_HF_TOKEN = "hf" + "_" + "abcdefghijklmnop"
+FAKE_GROQ_KEY = "gsk" + "_" + "abcdefghijklmnop"
+FAKE_GOOGLE_TOKEN = "AQ" + "." + "abcdefghijklmnop"
+
+
+def _run_with_failure(monkeypatch, exc, dev_cases):
+    from dataclasses import replace
+
+    def boom(*a, **k):
+        raise exc
+
+    monkeypatch.setattr(core, "diagnose", boom)
+    monkeypatch.setitem(core._daily, "date", "")
+    settings = replace(get_settings("mock"), gemini_api_key=FAKE_KEY)
+    return core.run(dev_cases[0]["log"], "agent (tools + RAG)", 0, settings)
+
+
+def test_a_rejected_key_shows_a_fixed_message_not_the_provider_error(
+    monkeypatch, dev_cases, caplog
+):
+    from wifi_doctor.llm import ProviderError
+
+    raw = (
+        "400 INVALID_ARGUMENT. {'error': {'message': 'API key not valid.', "
+        f"'reason': 'API_KEY_INVALID', 'key': '{FAKE_KEY}'}}}}"
+    )
+    with caplog.at_level("WARNING", logger="wifi_doctor.demo"):
+        out = _run_with_failure(monkeypatch, ProviderError(raw), dev_cases)
+    assert out.message == core.KEY_REJECTED_MESSAGE and not out.used_run
+    assert "INVALID_ARGUMENT" not in out.message and FAKE_KEY[:10] not in out.message
+    assert FAKE_KEY not in caplog.text and FAKE_KEY[:6] not in caplog.text
+    assert "API_KEY_INVALID" in caplog.text, "the details still reach the server log"
+
+
+def test_any_other_failure_is_generic_and_never_a_traceback(monkeypatch, dev_cases):
+    out = _run_with_failure(monkeypatch, RuntimeError("boom at 0xdeadbeef"), dev_cases)
+    assert out.message == core.PROVIDER_FAILED_MESSAGE
+    assert "boom" not in out.message and "RuntimeError" not in out.message
+
+
+def test_scrub_removes_the_key_and_key_shaped_strings():
+    text = f"url?key={FAKE_KEY} {FAKE_HF_TOKEN} {FAKE_GROQ_KEY} {FAKE_GOOGLE_TOKEN}"
+    cleaned = core.scrub(text, FAKE_KEY)
+    for leaked in (FAKE_KEY, "hf_abc", "gsk_abc", "AQ.abc"):
+        assert leaked not in cleaned

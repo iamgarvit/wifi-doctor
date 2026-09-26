@@ -1,0 +1,32 @@
+{
+  "case_id": "test_0063",
+  "mode": "agent",
+  "truth": "ROAMING_FAILURE",
+  "predicted": "ROAMING_FAILURE",
+  "truth_lines": [
+    55,
+    56,
+    58,
+    59
+  ],
+  "cited_lines": [
+    7,
+    58,
+    59
+  ],
+  "unverifiable_citations": 0,
+  "n_citations": 3,
+  "confidence": 1.0,
+  "needs_more_info": false,
+  "valid_first_try": true,
+  "produced_valid_output": true,
+  "pre_validation_evidence_errors": 0,
+  "steps": 7,
+  "api_requests": 7,
+  "total_tokens": 65360,
+  "wall_ms": 49960.0,
+  "llm_latency_ms": 7137.7,
+  "variant": "transient_recovery",
+  "trace_path": "results/2026-09-25_gemini_gemini-3.5-flash-lite/traces/agent/test_0063.jsonl",
+  "error": null
+}

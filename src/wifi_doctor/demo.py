@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 import os
+import re
 import threading
 from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
@@ -24,12 +26,14 @@ from datetime import UTC, datetime
 from .agent import AgentResult, diagnose
 from .baseline import classify
 from .config import ROOT, Settings
-from .llm import ProviderError, RateLimitError, build_provider
+from .llm import RateLimitError, build_provider
 from .logparse import split_lines, truncate_for_prompt
 from .ratelimit import DailyQuotaExceeded, RateLimiter
 from .redact import redact_log
 from .retrieval import get_kb
 from .schema import Diagnosis, RootCause
+
+_logger = logging.getLogger(__name__)
 
 MAX_INPUT_LINES = 2000
 EXAMPLES_PATH = ROOT / "data" / "synthetic" / "dev" / "cases.jsonl"
@@ -145,6 +149,45 @@ QUOTA_MESSAGE = (
 )
 
 
+KEY_REJECTED_MESSAGE = (
+    "### The demo's API key was rejected\n\nThe model provider did not accept the key configured "
+    "for this demo (it may be invalid, revoked or restricted). The **rule baseline** mode still "
+    "works, and you can run the full demo locally with your own free key; see the README."
+)
+
+PROVIDER_FAILED_MESSAGE = (
+    "### The model could not be reached\n\nThe request to the model provider failed. Try again "
+    "in a minute, or use the **rule baseline** mode, which needs no API access."
+)
+
+# Auth failures, as Gemini (and most providers) report them.
+_KEY_REJECTED = re.compile(
+    r"API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|\b40[13]\b",
+    re.IGNORECASE,
+)
+# Anything shaped like a provider key, scrubbed from server-side logs as a backstop.
+_KEY_LIKE = re.compile(
+    r"AIza[0-9A-Za-z_\-]{10,}|\bAQ\.[0-9A-Za-z_\-]{10,}|\b(?:hf|gsk|sk)[_-][\w\-]{10,}"
+)
+
+
+def scrub(text: str, secret: str | None = None) -> str:
+    """Remove the configured key, and anything key-shaped, from text bound for a log."""
+    if secret:
+        text = text.replace(secret, "[redacted]")
+    return _KEY_LIKE.sub("[redacted]", text)
+
+
+def failure_message(exc: BaseException, settings) -> str:
+    """What a visitor sees when the model call fails: never the raw provider error.
+
+    The details go to the server log only, with the key scrubbed out.
+    """
+    detail = scrub(f"{type(exc).__name__}: {exc}", getattr(settings, "api_key", None))
+    _logger.warning("model call failed: %s", detail[:500])
+    return KEY_REJECTED_MESSAGE if _KEY_REJECTED.search(str(exc)) else PROVIDER_FAILED_MESSAGE
+
+
 def check_quota(session_runs: int, settings) -> str | None:
     """Return a user-facing refusal message, or None when the run may proceed."""
     if session_runs >= settings.demo_max_runs_per_session:
@@ -210,13 +253,8 @@ def run(log_text: str | None, mode_label: str, session_runs: int, settings: Sett
         # Either the local daily budget (LLM_RPD) or the provider's own quota,
         # which the provider layer gives up on without a long backoff.
         return Outcome(log=log, notice=notice, mode=mode, message=QUOTA_MESSAGE)
-    except ProviderError as exc:
-        return Outcome(
-            log=log,
-            notice=notice,
-            mode=mode,
-            message=f"### The model provider returned an error\n\n```\n{exc}\n```",
-        )
+    except Exception as exc:  # noqa: BLE001 - a visitor never sees a raw error or traceback
+        return Outcome(log=log, notice=notice, mode=mode, message=failure_message(exc, settings))
 
     with _daily_lock:
         _daily["count"] += 1

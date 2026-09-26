@@ -6,6 +6,10 @@ name: Sync to Hugging Face Space
 on:
   workflow_dispatch:
 
+# The workflow only reads the repository; GITHUB_TOKEN gets nothing more.
+permissions:
+  contents: read
+
 jobs:
   sync:
     runs-on: ubuntu-latest

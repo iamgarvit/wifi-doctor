@@ -35,17 +35,18 @@ published run, with per-class breakdowns, confusion matrices and the worst failu
 
 ### Why the agent's evidence precision is lower than the baseline's
 
-The agent cites more lines (2.8 per failing log against 2.1), and 25 of its 27 citations outside
+The agent cites more lines (2.95 per failing log against 2.25), and 52 of its 61 citations outside
 the ground truth are on logs it diagnosed correctly. They are neighbouring lines from the same
-failure sequence, such as the resulting `CTRL-EVENT-DISCONNECTED`, the `EAP-STARTED` /
-`EAP-METHOD` lines or a signal reading, that the minimal ground-truth set does not include.
+failure sequence, most often the resulting `CTRL-EVENT-DISCONNECTED`, followed by
+`CTRL-EVENT-CONNECTED` lines, signal readings and NetworkManager state changes, that the minimal
+ground-truth set does not include.
 
-## Coverage of the published run
+## Test set
 
-The published results cover 33 of the 66 held-out test logs: a balanced 3 per class, the same 33
-for every mode. The run stopped at the Gemini free tier's daily request quota. At 3 examples per
-class one case moves accuracy by 3 points, so the gaps between modes are directional rather than
-statistically meaningful.
+The published results cover all 66 held-out test logs, 6 per class, and every mode is scored on
+the same logs. At 6 examples per class one case moves accuracy by 1.5 points, so small gaps
+between modes, such as the 1.5-point gap between the rule baseline and single-shot, are not
+meaningful.
 
 ## Running it
 
@@ -63,8 +64,9 @@ python scripts/update_readme_results.py results/<run>/metrics.json
 ```
 
 Every finished case is cached under `results/<run>/cache/`, so an interrupted run resumes where
-it stopped and never pays for the same log twice. Re-running the first command after the quota
-resets therefore finishes the remaining 33 test logs.
+it stopped and never pays for the same log twice. If the provider's daily quota runs out, the run
+stops without caching the failed case, and re-running the same command after the quota resets
+continues from there.
 
 A client-side rate limiter paces requests (`LLM_RPM`) and a persisted daily counter enforces
 `LLM_RPD`. Retryable 429s and 503s are retried with exponential backoff, honouring the provider's
@@ -77,8 +79,8 @@ The prompts and rules were tuned on the dev split only; the test split was never
 
 The agent's token cost grows with the conversation: tool results are resent on every turn, so a
 400-line log with a long tool phase is markedly more expensive than a short one. On the published
-run the agent averaged 6.42 API requests and 44,041 tokens per log, against 1.00 and 11,011 for
-single-shot. Single-shot's median latency was 2.4 s against the agent's 25.4 s.
+run the agent averaged 6.44 API requests and 42,595 tokens per log, against 1.02 and 10,372 for
+single-shot. Single-shot's median latency was 2.4 s against the agent's 25.0 s.
 
 ## Traces
 

@@ -16,3 +16,5 @@ gatherUsageStats = false
 
 [client]
 toolbarMode = "minimal"
+# Never show visitors a traceback or exception text (Community Cloud also enforces this).
+showErrorDetails = "none"

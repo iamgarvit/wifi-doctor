@@ -40,7 +40,7 @@ from metrics import (  # noqa: E402
 from wifi_doctor.agent import MAX_STEPS, diagnose  # noqa: E402
 from wifi_doctor.baseline import classify  # noqa: E402
 from wifi_doctor.config import ROOT, VERIFIED_FREE_TIER_RPD, get_settings  # noqa: E402
-from wifi_doctor.llm import build_provider  # noqa: E402
+from wifi_doctor.llm import RateLimitError, build_provider  # noqa: E402
 from wifi_doctor.logparse import split_lines  # noqa: E402
 from wifi_doctor.ratelimit import DailyQuotaExceeded, RateLimiter  # noqa: E402
 from wifi_doctor.redact import redact_log  # noqa: E402
@@ -143,7 +143,9 @@ def run_llm(case: dict, mode: str, provider, kb, trace_dir: Path, max_steps: int
             variant=case.get("variant", "plain"),
             trace_path=_rel(res.trace.path) if res.trace.path else None,
         )
-    except DailyQuotaExceeded:
+    except (DailyQuotaExceeded, RateLimitError):
+        # Out of quota (local budget, or the provider's own 429 after backoff):
+        # stop rather than cache a quota error as if it were the model's answer.
         raise
     except Exception as exc:  # noqa: BLE001 - one bad case must not lose the run
         err = f"{type(exc).__name__}: {exc}"
@@ -278,7 +280,7 @@ def main() -> None:
                     if mode == "baseline"
                     else run_llm(case, mode, provider, kb, trace_dir, args.max_steps)
                 )
-            except DailyQuotaExceeded as exc:
+            except (DailyQuotaExceeded, RateLimitError) as exc:
                 print(
                     f"\n  STOPPED: {exc}\n  {len(out)}/{len(cases)} done in this mode; "
                     f"re-run the same command tomorrow to resume.\n"

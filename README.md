@@ -12,8 +12,8 @@ the evaluation below used `gemini-3.5-flash-lite` with hybrid retrieval.
 
 **Highlights**
 
-- **93.9% accuracy / 0.938 macro-F1** on 33 held-out logs, against 84.8% for a single-prompt LLM and
-  75.8% for a hand-written regex baseline.
+- **90.9% accuracy / 0.912 macro-F1** on 66 held-out logs, against 83.3% for a hand-written regex
+  baseline and 81.8% for a single-prompt LLM.
 - **0% false alarms** on healthy logs and **0% hallucinated evidence**; output is schema-valid
   93.9% of the time on the first try and 100% after one validated retry.
 - **Stack:** Python, Gemini function calling, Pydantic, BM25 + bge-small embeddings with RRF,
@@ -78,33 +78,30 @@ The agent loop is `_run_agent` in [`src/wifi_doctor/agent.py`](src/wifi_doctor/a
 ## Results
 
 <!-- RESULTS:START -->
-Provider **gemini**, model **`gemini-3.5-flash-lite`**, run on **2026-09-25** against the held-out **test** split (33 logs, 245 API requests). Retrieval backend: hybrid (`BAAI/bge-small-en-v1.5`).
+Provider **gemini**, model **`gemini-3.5-flash-lite`**, run on **2026-09-26** against the held-out **test** split (66 logs, 492 API requests). Retrieval backend: hybrid (`BAAI/bge-small-en-v1.5`).
 
 | metric | rule baseline | single-shot | agent |
 |---|---|---|---|
-| root-cause accuracy | 75.8% | 84.8% | 93.9% |
-| macro-F1 | 0.697 | 0.817 | 0.938 |
-| evidence precision | 82.8% | 62.1% | 68.2% |
-| evidence recall | 44.9% | 45.8% | 49.2% |
+| root-cause accuracy | 83.3% | 81.8% | 90.9% |
+| macro-F1 | 0.820 | 0.792 | 0.912 |
+| evidence precision | 88.1% | 62.7% | 65.5% |
+| evidence recall | 50.0% | 44.5% | 48.7% |
 | hallucinated evidence | 0.0% | 0.0% | 0.0% |
-| HEALTHY false-alarm rate | 33.3% | 0.0% | 0.0% |
-| missed-failure rate | 3.3% | 10.0% | 3.3% |
-| schema-valid, first try | 100.0% | 100.0% | 93.9% |
+| HEALTHY false-alarm rate | 16.7% | 0.0% | 0.0% |
+| missed-failure rate | 1.7% | 13.3% | 6.7% |
+| schema-valid, first try | 100.0% | 98.5% | 93.9% |
 | schema-valid, after retry | 100.0% | 100.0% | 100.0% |
-| API requests / log | 0.00 | 1.00 | 6.42 |
-| tokens / log | 0 | 11,011 | 44,041 |
-| median latency / log | 0.0s | 2.4s | 25.4s |
+| API requests / log | 0.00 | 1.02 | 6.44 |
+| tokens / log | 0 | 10,372 | 42,595 |
+| median latency / log | 0.0s | 2.4s | 25.0s |
 
 Full report with per-class breakdowns, confusion matrices and the worst failures: [`results/2026-09-25_gemini_gemini-3.5-flash-lite/report.md`](results/2026-09-25_gemini_gemini-3.5-flash-lite/report.md).
 <!-- RESULTS:END -->
 
-These results cover 33 of the 66 held-out logs (3 per class) because the run hit the free tier's
-daily request quota, so at this sample size the gaps between modes are directional.
-
-The agent's evidence precision is lower than the baseline's because it cites more lines (2.8 per
-failing log against 2.1): 25 of its 27 citations outside the ground truth are on correctly
-diagnosed logs, e.g. the resulting `CTRL-EVENT-DISCONNECTED`, which the minimal ground truth omits.
-Metric definitions: [`docs/EVALUATION.md`](docs/EVALUATION.md).
+The agent's evidence precision is lower than the baseline's because it cites more lines (2.95 per
+failing log against 2.25): 52 of its 61 citations outside the ground truth are on correctly
+diagnosed logs, most often the resulting `CTRL-EVENT-DISCONNECTED`, which the minimal ground truth
+omits. Metric definitions: [`docs/EVALUATION.md`](docs/EVALUATION.md).
 
 ## Design decisions
 
@@ -131,7 +128,7 @@ BM25-only when embeddings are unavailable.
 **Validation and one retry.** Answers must parse as the Pydantic model, every cited line must exist
 with the quoted text on it, and every knowledge-base citation must have been retrieved in that
 run. Errors go back to the model once; a second failure returns `needs_more_info=true`. This caught
-2 of 33 agent cases, such as the invented NetworkManager line in
+4 of 66 agent cases, such as the invented NetworkManager line in
 [`agent_test_0006_validation_retry.jsonl`](docs/sample_traces/agent_test_0006_validation_retry.jsonl).
 
 **Redaction before anything is sent.** MACs, SSIDs, IPs, EAP identities, certificate subjects,
@@ -151,7 +148,8 @@ agent is measured against a real bar.
 - **WPA2-Personal and 802.1X only:** WPA3/SAE is in the knowledge base but not a generated class.
 - **English only**, for both the knowledge base and the prompts.
 - **Confidence is not calibrated:** mean 1.00 when right and 1.00 when wrong; fixing that is next.
-- **One model, one day:** a single model and date at temperature 0, with no repeated-run variance.
+- **Small test set:** 66 logs, 6 per class, so one case moves accuracy by 1.5 points.
+- **One model, one run:** a single model at temperature 0, with no repeated-run variance.
 
 ## Run it
 
@@ -181,8 +179,8 @@ result = diagnose(open("my.log").read(), build_provider(get_settings()))
 print(result.display().model_dump_json(indent=2))
 ```
 
-**The evaluation.** Finished cases are cached, so re-running this after the daily quota resets
-finishes the remaining 33 test logs; more options are in [`docs/EVALUATION.md`](docs/EVALUATION.md).
+**The evaluation.** Finished cases are cached, so an interrupted run resumes where it stopped;
+more options are in [`docs/EVALUATION.md`](docs/EVALUATION.md).
 
 ```bash
 python eval/run_eval.py --split test --modes baseline single_shot agent \
